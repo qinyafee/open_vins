@@ -217,6 +217,7 @@ int main(int argc, char** argv)
                 message.sensor_ids.push_back(it0->first);
                 message.images.push_back(it0->second.second);
                 sys->feed_measurement_camera(message);
+                // std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
             it0 = image_buffer.erase(it0);
         }

@@ -152,8 +152,11 @@ void StateHelper::EKFUpdate(std::shared_ptr<State> state, const std::vector<std:
 
     // Invert our S (should we use a more stable method here??)
     Eigen::MatrixXd Sinv = Eigen::MatrixXd::Identity(R.rows(), R.rows());
+
     S.selfadjointView<Eigen::Upper>().llt().solveInPlace(Sinv);
     Eigen::MatrixXd K = M_a * Sinv.selfadjointView<Eigen::Upper>();
+    // std::cout << "S*Sinv--------------------------------------------" << '\n';
+    // std::cout << S*Sinv << '\n';
     //Eigen::MatrixXd K = M_a * S.inverse();
 
     // Update Covariance
