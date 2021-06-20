@@ -19,8 +19,6 @@ using namespace std;
 #include <eigen3/Eigen/Dense>
 using namespace Eigen;
 
-#include <ros/console.h>
-#include <ros/assert.h>
 
 #include "parameters.h"
 #include "../utility/tic_toc.h"

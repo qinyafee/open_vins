@@ -263,8 +263,8 @@ void MarginalizationInfo::marginalize()
         int ret = pthread_create( &tids[i], NULL, ThreadsConstructA ,(void*)&(threadsstruct[i]));
         if (ret != 0)
         {
-            ROS_WARN("pthread_create error");
-            ROS_BREAK();
+            std::cout << "pthread_create error\n";
+            assert(0);//ROS_BREAK();
         }
     }
     for( int i = NUM_THREADS - 1; i >= 0; i--)  
