@@ -67,7 +67,7 @@ namespace ov_msckf {
         int max_aruco_features = 1024;
 
         /// Number of distinct cameras that we will observe features in
-        int num_cameras = 1;
+        int num_cameras = 1; // include mono + stereo
 
         /// Number of cameras (a stereo pair is not consider unique since both images occur at the same pose timestamp)
         int num_unique_cameras = 1;

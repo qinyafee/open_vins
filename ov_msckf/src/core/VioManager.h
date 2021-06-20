@@ -47,6 +47,14 @@
 
 #include "VioManagerOptions.h"
 
+// #include "utils/Math.h"
+#include "estimator/estimator.h"
+#include "estimator/parameters.h"
+// #include "vins_estimator/src/estimator/estimator.h"
+// #include "~/catkin_ws_ov/src/open_vins/vins_estimator/src/estimator/estimator.h"
+
+
+
 
 namespace ov_msckf {
 
@@ -62,6 +70,7 @@ namespace ov_msckf {
 
 
     public:
+        Estimator vins_estimator; //申明一个estimator，也就是VIO。自动执行该类的构造函数
 
         /**
          * @brief Default constructor, will load all configuration variables
@@ -274,7 +283,10 @@ namespace ov_msckf {
          * @return True if we have successfully initialized
          */
         bool try_to_initialize();
-
+        
+        // // dynamic intialize using vins_estimiator
+        // bool try_to_dynamic_initialize();
+        
         /**
          * @brief This function will will re-triangulate all features in the current frame
          *
@@ -354,7 +366,61 @@ namespace ov_msckf {
         std::unordered_map<size_t, Eigen::Vector3d> active_tracks_uvd;
         cv::Mat active_image;
 
+        /**
+         * @brief Returns a JPL quaternion from a rotation matrix
+         *
+         * This is based on the equation 74 in [Indirect Kalman Filter for 3D Attitude Estimation](http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf).
+         * In the implementation, we have 4 statements so that we avoid a division by zero and
+         * instead always divide by the largest diagonal element. This all comes from the
+         * definition of a rotation matrix, using the diagonal elements and an off-diagonal.
+         * \f{align*}{
+         *  \mathbf{R}(\bar{q})=
+         *  \begin{bmatrix}
+         *  q_1^2-q_2^2-q_3^2+q_4^2 & 2(q_1q_2+q_3q_4) & 2(q_1q_3-q_2q_4) \\
+         *  2(q_1q_2-q_3q_4) & -q_2^2+q_2^2-q_3^2+q_4^2 & 2(q_2q_3+q_1q_4) \\
+         *  2(q_1q_3+q_2q_4) & 2(q_2q_3-q_1q_4) & -q_1^2-q_2^2+q_3^2+q_4^2
+         *  \end{bmatrix}
+         * \f}
+         *
+         * @param[in] rot 3x3 rotation matrix
+         * @return 4x1 quaternion
+         */
+        static inline Eigen::Matrix<double, 4, 1> rot_2_quat(const Eigen::Matrix<double, 3, 3> &rot) {
+            Eigen::Matrix<double, 4, 1> q;
+            double T = rot.trace();
+            if ((rot(0, 0) >= T) && (rot(0, 0) >= rot(1, 1)) && (rot(0, 0) >= rot(2, 2))) {
+                //cout << "case 1- " << endl;
+                q(0) = sqrt((1 + (2 * rot(0, 0)) - T) / 4);
+                q(1) = (1 / (4 * q(0))) * (rot(0, 1) + rot(1, 0));
+                q(2) = (1 / (4 * q(0))) * (rot(0, 2) + rot(2, 0));
+                q(3) = (1 / (4 * q(0))) * (rot(1, 2) - rot(2, 1));
 
+            } else if ((rot(1, 1) >= T) && (rot(1, 1) >= rot(0, 0)) && (rot(1, 1) >= rot(2, 2))) {
+                //cout << "case 2- " << endl;
+                q(1) = sqrt((1 + (2 * rot(1, 1)) - T) / 4);
+                q(0) = (1 / (4 * q(1))) * (rot(0, 1) + rot(1, 0));
+                q(2) = (1 / (4 * q(1))) * (rot(1, 2) + rot(2, 1));
+                q(3) = (1 / (4 * q(1))) * (rot(2, 0) - rot(0, 2));
+            } else if ((rot(2, 2) >= T) && (rot(2, 2) >= rot(0, 0)) && (rot(2, 2) >= rot(1, 1))) {
+                //cout << "case 3- " << endl;
+                q(2) = sqrt((1 + (2 * rot(2, 2)) - T) / 4);
+                q(0) = (1 / (4 * q(2))) * (rot(0, 2) + rot(2, 0));
+                q(1) = (1 / (4 * q(2))) * (rot(1, 2) + rot(2, 1));
+                q(3) = (1 / (4 * q(2))) * (rot(0, 1) - rot(1, 0));
+            } else {
+                //cout << "case 4- " << endl;
+                q(3) = sqrt((1 + T) / 4);
+                q(0) = (1 / (4 * q(3))) * (rot(1, 2) - rot(2, 1));
+                q(1) = (1 / (4 * q(3))) * (rot(2, 0) - rot(0, 2));
+                q(2) = (1 / (4 * q(3))) * (rot(0, 1) - rot(1, 0));
+            }
+            if (q(3) < 0) {
+                q = -q;
+            }
+            // normalize and return
+            q = q / (q.norm());
+            return q;
+        }
     };
 
 

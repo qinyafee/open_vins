@@ -172,7 +172,7 @@ void Estimator::inputImage(double t, const cv::Mat &_img, const cv::Mat &_img1)
     if (SHOW_TRACK)
     {
         cv::Mat imgTrack = featureTracker.getTrackImage();
-        pubTrackImage(imgTrack, t);
+        // pubTrackImage(imgTrack, t);
     }
     
     if(MULTIPLE_THREAD)  
@@ -208,7 +208,7 @@ void Estimator::inputIMU(double t, const Vector3d &linearAcceleration, const Vec
     {
         mPropagate.lock();
         fastPredictIMU(t, linearAcceleration, angularVelocity);
-        pubLatestOdometry(latest_P, latest_Q, latest_V, t);
+        // pubLatestOdometry(latest_P, latest_Q, latest_V, t);
         mPropagate.unlock();
     }
 }
@@ -324,12 +324,12 @@ void Estimator::processMeasurements()
             header.frame_id = "world";
             header.stamp = ros::Time(feature.first);
 
-            pubOdometry(*this, header);
-            pubKeyPoses(*this, header);
-            pubCameraPose(*this, header);
-            pubPointCloud(*this, header);
-            pubKeyframe(*this);
-            pubTF(*this, header);
+            // pubOdometry(*this, header);
+            // pubKeyPoses(*this, header);
+            // pubCameraPose(*this, header);
+            // pubPointCloud(*this, header);
+            // pubKeyframe(*this);
+            // pubTF(*this, header);
             mProcess.unlock();
         }
 
@@ -534,7 +534,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
         }
 
     }
-    else
+/*    else
     {
         TicToc t_solve;
         if(!USE_IMU)
@@ -574,7 +574,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
         last_R0 = Rs[0];
         last_P0 = Ps[0];
         updateLatestStates();
-    }  
+    }  */
 }
 
 bool Estimator::initialStructure()

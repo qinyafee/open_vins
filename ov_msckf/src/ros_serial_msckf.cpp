@@ -36,6 +36,7 @@
 #include "utils/parse_ros.h"
 #include "utils/sensor_data.h"
 
+#include "estimator/parameters.h"
 
 using namespace ov_msckf;
 
@@ -57,6 +58,12 @@ int main(int argc, char** argv)
     sys = std::make_shared<VioManager>(params);
     viz = std::make_shared<RosVisualizer>(nh, sys);
 
+    string config_file;
+    nh.getParam("path_vins_config", config_file);
+    // string config_file = "~/workspace/vins_fusion_ws/src/VINS-Fusion/config/euroc/20210318.yaml";
+    printf("config_file: %s\n", config_file.c_str());
+    readParameters(config_file);// 读取参数
+    sys->vins_estimator.setParameter();// 设置参数
 
     //===================================================================================
     //===================================================================================
@@ -175,7 +182,7 @@ int main(int argc, char** argv)
             message.wm << (*s2).angular_velocity.x, (*s2).angular_velocity.y, (*s2).angular_velocity.z;
             message.am << (*s2).linear_acceleration.x, (*s2).linear_acceleration.y, (*s2).linear_acceleration.z;
             // send it to our VIO system
-            sys->feed_measurement_imu(message);
+            sys->feed_measurement_imu(message);//此处调用track_image_and_update()
             viz->visualize();
             viz->visualize_odometry(message.timestamp);
         }
@@ -232,7 +239,7 @@ int main(int argc, char** argv)
             if(!gt_states.empty() && !sys->initialized() && DatasetReader::get_gt_state(image_buffer.at(stereo.first).first, imustate, gt_states)) {
                 //biases are pretty bad normally, so zero them
                 //imustate.block(11,0,6,1).setZero();
-                sys->initialize_with_gt(imustate);
+                sys->initialize_with_gt(imustate); //not called by pimax
             } else if(gt_states.empty() || sys->initialized()) {
                 ov_core::CameraData message;
                 message.timestamp = image_buffer.at(stereo.first).first;
@@ -240,7 +247,7 @@ int main(int argc, char** argv)
                 message.sensor_ids.push_back(stereo.second);
                 message.images.push_back(image_buffer.at(stereo.first).second);
                 message.images.push_back(image_buffer.at(stereo.second).second);
-                sys->feed_measurement_camera(message);
+                sys->feed_measurement_camera(message);//只是加入queue
             }
             image_buffer.erase(stereo.first);
             image_buffer.erase(stereo.second);

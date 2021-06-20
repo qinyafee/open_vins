@@ -1,28 +1,54 @@
 <launch>
 
-    <node name="run_serial_msckf" pkg="ov_msckf" type="run_serial_msckf" output="screen">
-    
+    <arg name="use_stereo"  default="true" />
+    <!-- imu starting thresholds -->
+    <arg name="init_window_time"  default="0.75" />
+    <arg name="init_imu_thresh"   default="1.5" />
+
+    <!-- saving trajectory path and timing information -->
+    <arg name="dosave"      default="false" />
+    <arg name="dotime"      default="false" />
+    <arg name="path_est"    default="/tmp/traj_estimate.txt" />
+    <arg name="path_time"   default="/tmp/traj_timing.txt" />
+
+    <!-- launch-prefix="xterm -e gdb -!!-args" -->
+    <node name="run_serial_msckf" 
+        pkg="ov_msckf" 
+        type="run_serial_msckf" 
+        
+        output="screen">
         <!-- bag topics -->
         <param name="topic_imu"      type="string" value="/imu0" />
         <param name="topic_camera0"  type="string" value="/cam0/image_raw" />
         <param name="topic_camera1"  type="string" value="/cam1/image_raw" />
         <rosparam param="stereo_pairs">[0,1]</rosparam>
-    
+
+        <!-- vins config path -->
+        <param name="path_vins_config"    type="string" value="/home/qyf/workspace/catkin_ws_ov/src/open_vins/config/Pimax/20210318.yaml" />
         <!-- bag parameters -->
         <param name="path_bag"    type="string" value="/home/qyf/0Data/20210318/pimax_ns.bag" />
         <param name="bag_start"   type="int"    value="0" />
         <param name="bag_durr"    type="int"    value="-1" />
-    
+
+
         <!-- world/filter parameters -->
         <param name="max_clones"             type="int"    value="11" />
         <param name="max_slam"               type="int"    value="0" />
         <param name="max_cameras"            type="int"    value="2" />
-        <param name="init_window_time"       type="double" value="0.5" />
-        <param name="init_imu_thresh"        type="double" value="2.0" />
+        <!-- <param name="init_window_time"       type="double" value="0.5" />
+        <param name="init_imu_thresh"        type="double" value="2.0" /> -->
+        <param name="init_window_time"       type="double" value="$(arg init_window_time)" />
+        <param name="init_imu_thresh"        type="double" value="$(arg init_imu_thresh)" />
+        
         <rosparam param="gravity">[0.0,0.0,9.81]</rosparam>
-        <param name="feat_rep_msckf"         type="string" value="GLOBAL_3D" />
-        <param name="feat_rep_slam"          type="string" value="GLOBAL_3D" />
-    
+        
+        <param name="feat_rep_msckf"         type="string" value="ANCHORED_FULL_INVERSE_DEPTH" />
+        <param name="feat_rep_slam"          type="string" value="ANCHORED_FULL_INVERSE_DEPTH" />
+        <!-- <param name="feat_rep_msckf"         type="string" value="GLOBAL_3D" />
+        <param name="feat_rep_slam"          type="string" value="GLOBAL_3D" /> -->
+
+        <param name="use_fej"                type="bool"   value="true" />
+
         <!-- tracker/extractor parameters -->
         <param name="use_klt"          type="bool"   value="true" />
         <param name="fast_threshold"   type="int"    value="10" />
@@ -34,17 +60,36 @@
         <!-- sensor noise values / update -->
         <param name="up_msckf_sigma_px"            type="double"   value="1" />
         <param name="up_msckf_chi2_multipler"      type="double"   value="1" />
+
+
+        <!-- saving trajectory path and timing information -->
+        <arg name="dosave"      default="false" />
+        <arg name="dotime"      default="false" />
+        <arg name="path_est"    default="/tmp/traj_estimate.txt" />
+        <arg name="path_time"   default="/tmp/traj_timing.txt" />
+
         <!-- continuous -->
         <!-- <param name="gyroscope_noise_density"      type="double"   value="2.0783740699543856e-02" />
         <param name="gyroscope_random_walk"        type="double"   value="3.0074367448324271e-05" />
         <param name="accelerometer_noise_density"  type="double"   value="2.6561838800082605e-01" />
         <param name="accelerometer_random_walk"    type="double"   value="2.2683907382254142e-04" /> -->
-        <!-- discrete -->
-        <param name="gyroscope_noise_density"      type="double"   value="0.657239589" />
-        <param name="gyroscope_random_walk"        type="double"   value="9.51035E-05" />
-        <param name="accelerometer_noise_density"  type="double"   value="8.399590945" />
-        <param name="accelerometer_random_walk"    type="double"   value="7.17328E-04" />
 
+        <param name="gyroscope_noise_density"      type="double"   value="2.0783740699543856e-02" />
+        <param name="gyroscope_random_walk"        type="double"   value="3.0074367448324271e-05" />
+        <param name="accelerometer_noise_density"  type="double"   value="2.6561838800082605e-01" />
+        <param name="accelerometer_random_walk"    type="double"   value="2.2683907382254142e-04" />
+        <!-- gyr_n: 2.0783740699543856e-02       
+        gyr_w: 3.0074367448324271e-05  p
+        acc_n: 2.6561838800082605e-01  
+        acc_w: 2.2683907382254142e-04 -->
+
+        <!-- discrete -->
+        <!-- <param name="gyroscope_noise_density"      type="double"   value="3.286197945" />
+        <param name="gyroscope_random_walk"        type="double"   value="9.51035E-05" />
+        <param name="accelerometer_noise_density"  type="double"   value="41.99795473" />
+        <param name="accelerometer_random_walk"    type="double"   value="0.000717328" /> -->
+
+        
         <!-- camera intrinsics -->
         <param name="cam0_is_fisheye" type="bool" value="true" />
         <param name="cam1_is_fisheye" type="bool" value="true" />
@@ -56,17 +101,17 @@
         <!-- camera extrinsics -->
         <rosparam param="T_C0toI">
             [
-            -0.0448323624120508, 0.37166365022215864, -0.9272843093593764, -0.07694495439967482,
-            -0.3551724749045211, -0.8735024099857402, -0.33293550849872, -0.009514499266961716,
-            -0.9337251053445826, 0.3144195777184443, 0.1711658750937326, 0.019561220997500642,
+            0.999983894889441, -0.00440793301419765, 0.00357492493439619, -0.0550008207495751,
+            -0.00287754519537642, -0.936717525267484, -0.350074274391033, -0.00975503300751726,
+            0.00489179878907415, 0.350058349398071, -0.936715123354644, -0.00132148792060240,
             0.0, 0.0, 0.0, 1.0
-            ] 
+            ]
         </rosparam>
         <rosparam param="T_C1toI">
             [
-            0.0009087580013081853, 0.9999908486688397, -0.00418051880382142, -0.0006829297636030497,
-            -0.0004327075434272798, 0.00418091336184101, 0.9999911663248046, 0.06451230726146574,
-            0.9999994934614104, -0.000906941031613484, 0.00043650302204745195, 0.0031729640364701883,
+            0.999979779601092, 0.00321408971638084, 0.00548725944753664, 0.0550783336255521,
+            0.00492884924818270, -0.936958488144209, -0.349405921443252, -0.00922981360292011,
+            0.00401831233706562, 0.349425902190742, -0.936955384233501, -0.00137057350466811,
             0.0, 0.0, 0.0, 1.0
             ]
         </rosparam>
@@ -75,4 +120,15 @@
     
     <node type="rviz" name="rviz" pkg="rviz" args="-d $(find ov_msckf)/launch/display.rviz" />
     
+    <!-- record the trajectory if enabled -->
+    <group if="$(arg dosave)">
+        <node name="recorder_estimate" 
+        pkg="ov_eval" type="pose_to_file" 
+        output="screen" required="true">
+            <param name="topic"      type="str" value="/ov_msckf/poseimu" />
+            <param name="topic_type" type="str" value="PoseWithCovarianceStamped" />
+            <param name="output"     type="str" value="$(arg path_est)" />
+        </node>
+    </group>
+  
 </launch>

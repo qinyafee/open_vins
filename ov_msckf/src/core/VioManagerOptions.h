@@ -278,7 +278,8 @@ namespace ov_msckf {
             printf("\t- imu feq: %.2f\n", sim_freq_imu);
         }
 
-
+        /// The path vins_config
+        std::string path_vins_config;
 
     };
 

@@ -148,8 +148,11 @@ void VioManager::feed_measurement_imu(const ov_core::ImuData &message) {
     propagator->feed_imu(message);
 
     // Push back to our initializer
-    if(!is_initialized_vio) {
-        initializer->feed_imu(message);
+    // if(!is_initialized_vio) {
+    //     initializer->feed_imu(message);
+    // }
+    if(vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL) {
+        vins_estimator.inputIMU(message.timestamp, message.am, message.wm);
     }
 
     // Push back to the zero velocity updater if we have it
@@ -325,10 +328,39 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
         trackFEATS->feed_monocular(message.timestamp, message.images.at(0), message.sensor_ids.at(0));
     } else if (num_images == 2) {
         if(params.use_stereo) {
-            trackFEATS->feed_stereo(message.timestamp,
-                                    message.images.at(0), message.images.at(1),
-                                    message.sensor_ids.at(0), message.sensor_ids.at(1));
-        } else {
+            // if(!is_initialized_vio) {
+            if(vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL){
+                vins_estimator.inputImage(message.timestamp,
+                                            message.images.at(0),
+                                            message.images.at(1));
+                if(vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL)
+                    return;
+                else// initialize success
+                {
+                    Eigen::Matrix<double,3,3> Ro;
+                    Ro = vins_estimator.latest_Q.toRotationMatrix(); //R_I0toG;
+                    Eigen::Matrix<double,3,3> R;
+                    R = Ro.transpose();
+                    Eigen::Matrix<double,4,1> q_GtoI = VioManager::rot_2_quat(R);
+
+                    //set IMU state [time(sec),q_GtoI,p_IinG,v_IinG,b_gyro,b_accel] 17 dof
+                    Eigen::Matrix<double, 17, 1> imustate;
+                    imustate(0,0) = vins_estimator.latest_time;
+                    imustate.block(1, 0, 4, 1) = q_GtoI;
+                    imustate.block(5, 0, 3, 1) = vins_estimator.latest_P;
+                    imustate.block(8, 0, 3, 1) = vins_estimator.latest_V;
+                    imustate.block(11, 0, 3, 1) = vins_estimator.latest_Bg;
+                    imustate.block(14, 0, 3, 1) = vins_estimator.latest_Ba;
+                    // imustate.block((0, 0, 4, 1)) = vins_estimator.latest_acc_0;
+                    // imustate.block((0, 0, 4, 1)) = vins_estimator.latest_gyr_0;
+                    initialize_with_gt(imustate); //set is_initialized_vio=true here
+                }
+            }
+            else
+                trackFEATS->feed_stereo(message.timestamp,
+                                        message.images.at(0), message.images.at(1),
+                                        message.sensor_ids.at(0), message.sensor_ids.at(1));
+        } else {//using two mono
             if(params.use_multi_threading) {
                 boost::thread t_l = boost::thread(&TrackBase::feed_monocular, trackFEATS.get(), boost::ref(message.timestamp),
                                                   boost::ref(message.images.at(0)), boost::ref(message.sensor_ids.at(0)));
@@ -367,11 +399,18 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
 
     // If we do not have VIO initialization, then try to initialize
     // TODO: Or if we are trying to reset the system, then do that here!
+
+#if 0
     if(!is_initialized_vio) {
         is_initialized_vio = try_to_initialize();
         if(!is_initialized_vio) return;
     }
-
+// #else
+    // if(!is_initialized_vio) {
+    //     is_initialized_vio = try_to_dynamic_initialize();
+    //     if(!is_initialized_vio) return;
+    // }
+#endif
     // Call on our propagate and update function
     do_feature_propagate_update(message);
 
