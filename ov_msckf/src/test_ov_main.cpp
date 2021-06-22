@@ -15,7 +15,18 @@
 #include <thread>
 #include <GL/glut.h>
 #include "Interface.h"
-#include "vins_estimator/estimator/parameters.h"
+
+#include "core/VioManager.h"
+#include "core/VioManagerOptions.h"
+
+#include "utils/dataset_reader.h"
+#include "utils/parse_cmd.h"
+#include "utils/sensor_data.h"
+
+#include "estimator/parameters.h"
+
+using namespace ov_msckf;
+extern VioManagerOptions params;
 
 enum SensorType
 {
@@ -31,7 +42,7 @@ std::mutex result_mtx;
 std::map<int, Eigen::Vector3d> id_position_map;
 
 bool resultEnd = false;
-
+double MAX_DEPTH = 40.0, MIN_DEPTH = 0.1;
 
 void drawCamera(double cam_width)
 {
@@ -309,9 +320,11 @@ int main(int argc, char **argv)
     std::string configPath = argv[1];
     std::string basePath = argv[2];
     std::string imu_file = basePath + "/imu.txt";
-    std::string association_file = basePath + "/images/mapping_association.txt";
-    std::string seq_file = basePath + "seq.txt";
-
+    std::string association_file = basePath + "/images/association.txt";
+    std::string seq_file = basePath + "/seq.txt";
+    
+    // Read in our openvins parameters
+    params = parse_command_line_arguments(argc, argv);
     InitSystem(configPath);
     size_t num = 5;
     std::map<long long, std::vector<SensorType>> data_sequence;
@@ -357,15 +370,15 @@ int main(int argc, char **argv)
     }
     f_imu.close();
 
-    cv::FileStorage fs;
-    fs.open(configPath, cv::FileStorage::READ);
-    int showPangolin = fs["show_pangolin"];
-    fs.release();
-    if (showPangolin)
-    {
-        std::thread viewer_th = std::thread(&viewResult, std::ref(configPath));
-        viewer_th.detach();
-    }
+    // cv::FileStorage fs;
+    // fs.open(configPath, cv::FileStorage::READ);
+    // int showPangolin = fs["show_pangolin"];
+    // fs.release();
+    // if (showPangolin)
+    // {
+    //     std::thread viewer_th = std::thread(&viewResult, std::ref(configPath));
+    //     viewer_th.detach();
+    // }
 
     std::map<long long, std::string> ts_file_map;
 
@@ -393,7 +406,8 @@ int main(int argc, char **argv)
             data.gyro = imu_buffer[timestamp].second;
             FeedImuData(data);
             LocalizationOutputResult result;
-            ObtainLocalizationResult(timestamp, result);
+            // ObtainLocalizationResult(timestamp, result);
+            ObtainLocalizationResult2(result);
             if(result.valid)
             {
                 std::unique_lock<std::mutex> lock(result_mtx);
@@ -427,8 +441,8 @@ int main(int argc, char **argv)
     for(auto it = ts_file_map.begin(); it != ts_file_map.end(); it++)
         f_out << it->first << " " << it->second << std::endl;
     f_out.close();
-    if(MODE == MAPPING)
-        ExportMap();
+    // if(MODE == MAPPING)
+    //     ExportMap();
     pause();
 
     return 0;

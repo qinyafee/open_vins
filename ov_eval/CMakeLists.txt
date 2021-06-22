@@ -5,7 +5,7 @@ project(ov_eval)
 
 # Find catkin (the ROS build system)
 find_package(catkin QUIET COMPONENTS roscpp rospy geometry_msgs nav_msgs sensor_msgs)
-
+set(catkin_FOUND 0)
 # Include libraries
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time)

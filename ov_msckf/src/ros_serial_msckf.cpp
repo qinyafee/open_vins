@@ -240,7 +240,7 @@ int main(int argc, char** argv)
                 //biases are pretty bad normally, so zero them
                 //imustate.block(11,0,6,1).setZero();
                 sys->initialize_with_gt(imustate); //not called by pimax
-            } else if(gt_states.empty() || sys->initialized()) {
+            } else if(gt_states.empty() || sys->initialized()) {//TODOs, check it
                 ov_core::CameraData message;
                 message.timestamp = image_buffer.at(stereo.first).first;
                 message.sensor_ids.push_back(stereo.first);

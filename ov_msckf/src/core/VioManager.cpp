@@ -382,7 +382,7 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
     // If the aruco tracker is available, the also pass to it
     // NOTE: binocular tracking for aruco doesn't make sense as we by default have the ids
     // NOTE: thus we just call the stereo tracking if we are doing binocular!
-    if(trackARUCO != nullptr) {
+/*    if(trackARUCO != nullptr) {
         if(num_images == 1) {
             trackARUCO->feed_monocular(message.timestamp, message.images.at(0), message.sensor_ids.at(0));
         } else if (num_images == 2) {
@@ -394,7 +394,7 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
             std::exit(EXIT_FAILURE);
         }
         trackDATABASE->append_new_measurements(trackARUCO->get_feature_database());
-    }
+    }*/
     rT2 =  boost::posix_time::microsec_clock::local_time();
 
     // If we do not have VIO initialization, then try to initialize

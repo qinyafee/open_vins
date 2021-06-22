@@ -1,3 +1,15 @@
+
+## if using ros
+
+roslaunch ov_msckf 20210517.launch
+roslaunch ov_msckf 20210318.launch
+
+# if with out ros
+cd build
+./ov_msckf/test_ov_main /home/qyf/workspace/catkin_ws_ov/src/open_vins/ov_msckf/launch/20210318.launch /home/qyf/0Data/20210318
+
+Below is original
+-----------------------------
 # OpenVINS
 ![C/C++ CI](https://github.com/rpng/open_vins/workflows/C/C++%20CI/badge.svg)
 

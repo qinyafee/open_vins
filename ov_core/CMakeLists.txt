@@ -5,6 +5,7 @@ project(ov_core)
 
 # Find catkin (the ROS build system)
 find_package(catkin QUIET COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge)
+set(catkin_FOUND 0)
 
 # Include libraries (if we don't have opencv 4, then fallback to opencv 3)
 find_package(Eigen3 REQUIRED)

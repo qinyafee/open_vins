@@ -10,7 +10,9 @@ project(ov_msckf)
 find_package(catkin QUIET COMPONENTS 
     roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge 
     ov_core
-    vins_lib)
+    # vins_lib
+    )
+set(catkin_FOUND 0)
 
 # Include libraries (if we don't have opencv 4, then fallback to opencv 3)
 find_package(Eigen3 REQUIRED)
@@ -19,6 +21,12 @@ if (NOT OpenCV_FOUND)
     find_package(OpenCV 3 REQUIRED)
 endif()
 find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time)
+
+find_package(Pangolin REQUIRED)
+
+include_directories(
+${Pangolin_INCLUDE_DIRS}
+)
 
 # display message to user
 #message(WARNING "EIGEN VERSION: " ${EIGEN3_VERSION})
@@ -124,8 +132,8 @@ if (catkin_FOUND)
 
 else()
 
-    add_executable(run_simulation src/run_simulation.cpp)
-    target_link_libraries(run_simulation ov_msckf_lib ${thirdparty_libraries})
+    # add_executable(run_simulation src/run_simulation.cpp)
+    # target_link_libraries(run_simulation ov_msckf_lib ${thirdparty_libraries})
 
 endif()
 
@@ -136,4 +144,6 @@ endif()
 # add_executable(test_sim_repeat src/test_sim_repeat.cpp)
 # target_link_libraries(test_sim_repeat ov_msckf_lib ${thirdparty_libraries})
 
+add_executable(test_ov_main src/test_ov_main.cpp src/Interface.cc)
+target_link_libraries(test_ov_main ov_msckf_lib ${thirdparty_libraries} ${Pangolin_LIBRARIES})
 

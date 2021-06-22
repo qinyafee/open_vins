@@ -3,11 +3,24 @@
 //
 
 #include "Interface.h"
-#include "vins_estimator/estimator/estimator.h"
-#include "vins_estimator/estimator/parameters.h"
+#include <csignal>
+#include <memory>
+
 #include <mutex>
 
-std::shared_ptr<Estimator> mEstimator;
+#include "core/VioManager.h"
+// #include "core/VioManagerOptions.h"
+// #include "utils/dataset_reader.h"
+// #include "utils/parse_cmd.h"
+#include "utils/sensor_data.h"
+
+#include "estimator/parameters.h"
+
+using namespace ov_msckf;
+
+std::shared_ptr<VioManager> sys;
+VioManagerOptions params;
+
 double mTimescale;
 
 
@@ -31,9 +44,16 @@ int enable_loop;
 
 void InitSystem(const std::string &config_file)
 {
-    readParameters(config_file);
-    mEstimator = std::make_shared<Estimator>();
-    mEstimator->setParameter();
+
+    // Create our VIO system
+    sys = std::make_shared<VioManager>(params);
+    // printf("config_file: %s\n", config_file.c_str());
+    //for vins estimator
+    // readParameters(config_file);
+    // readParameters(params.path_vins_config);
+    readParameters("/home/qyf/workspace/catkin_ws_ov/src/open_vins/config/Pimax/20210318.yaml");
+    sys->vins_estimator.setParameter();
+
     mTimescale = 1e-6;
     t_drift_new.setZero();
     t_drift_old.setZero();
@@ -42,11 +62,11 @@ void InitSystem(const std::string &config_file)
     int correction_index = 0;
     new_drift = false;
 
-    cv::FileStorage fs;
-    fs.open(config_file, cv::FileStorage::READ);
-    loop_closure_interval = fs["loop_interval"];
-    enable_loop = fs["enable_loop"];
-    fs.release();
+    // cv::FileStorage fs;
+    // fs.open(config_file, cv::FileStorage::READ);
+    // loop_closure_interval = fs["loop_interval"];
+    // enable_loop = fs["enable_loop"];
+    // fs.release();
 
 //    isStable = false;
 }
@@ -56,10 +76,21 @@ void FeedImagesData(const ImagesInputData &data)
     double ts = (double)(data.ts) * mTimescale;
     cv::Mat left = data.imgs[3];
     cv::Mat right = data.imgs[2];
-    std::vector<cv::Mat> imgs = { left, right, data.imgs[0], data.imgs[1], data.imgs[4] };
+
+    ov_core::CameraData message;
+    message.timestamp = ts;
+    message.sensor_ids.push_back(0);
+    message.sensor_ids.push_back(1);
+    message.images.push_back(left);
+    message.images.push_back(right);
+    sys->feed_measurement_camera(message);//only add to queue
+
+/*    std::vector<cv::Mat> imgs = { left, right, data.imgs[0], data.imgs[1], data.imgs[4] };
+    std::vector<cv::Mat> imgs = { left, right };
     std::vector<cv::Mat> masks;
     if (!data.masks.empty()) {
-       masks = { data.masks[3], data.masks[2], data.masks[0], data.masks[1], data.masks[4] };
+        //masks = { data.masks[3], data.masks[2], data.masks[0], data.masks[1], data.masks[4] };
+        masks = { data.masks[3], data.masks[2]};
     }
     else {
         masks.resize(imgs.size());
@@ -100,16 +131,24 @@ void FeedImagesData(const ImagesInputData &data)
         delta_axang.fromRotationMatrix(r_drift_old.transpose() * r_drift_new);
         delta_t = (t_drift_cur - t_drift_old) / (double)(loop_closure_interval - 10);
         delta_r = Eigen::AngleAxisd(delta_axang.angle() / (double)(loop_closure_interval - 10), delta_axang.axis());
-    }
+    }*/
 
 }
 
 void FeedImuData(const ImuInputData &data)
 {
     double ts = (double)(data.ts) * mTimescale;
-    mEstimator->inputIMU(ts, data.acc, data.gyro);
+    // convert into correct format
+    ov_core::ImuData message;
+    message.timestamp = ts;
+    message.wm = data.gyro;
+    message.am = data.acc;
+    // send it to our VIO system
+    sys->feed_measurement_imu(message);//call track_image_and_update()    
 
-    if(mEstimator->solver_flag == Estimator::NON_LINEAR)
+    // mEstimator->inputIMU(ts, data.acc, data.gyro);
+
+/*    if(mEstimator->solver_flag == Estimator::NON_LINEAR)
     {
         if(enable_loop)
         {
@@ -132,10 +171,24 @@ void FeedImuData(const ImuInputData &data)
                 new_drift = false;
             }
         }
-    }
+    }*/
 }
 
 
+void ObtainLocalizationResult2(LocalizationOutputResult &result){
+    auto pstate = sys->get_state();
+    
+    result.t = pstate->_imu->pos();
+    result.R = quat_2_Rot(pstate->_imu->quat());
+    // result.v = ;
+    // result.gyro = ;
+    // result.acc = ;
+    result.ts = pstate->_timestamp;
+    result.ba.setZero();
+    result.bw.setZero();
+}
+
+/*
 void ObtainLocalizationResult(long long timestamp, LocalizationOutputResult &result)
 {
     double ts = (double)(timestamp) * mTimescale;
@@ -177,3 +230,4 @@ std::vector<std::pair<int, int>> ObtainMatchingWithMap(long long timestamp)
     std::vector<std::pair<int, int>> matching = mEstimator->getMapPointMatching(ts);
     return matching;
 }
+*/

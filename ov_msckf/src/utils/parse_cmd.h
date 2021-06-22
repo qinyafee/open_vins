@@ -62,6 +62,7 @@ namespace ov_msckf {
         app1.add_option("--max_aruco", params.state_options.max_aruco_features, "");
         app1.add_option("--max_cameras", params.state_options.num_cameras, "");
         app1.add_option("--dt_slam_delay", params.dt_slam_delay, "");
+        app1.add_option("--path_vins_config", params.path_vins_config, "");
 
         // Stereo pairs
         std::vector<int> stereo_pairs;

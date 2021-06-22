@@ -5,10 +5,10 @@ set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS "-std=c++11")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fPIC")
 
-find_package(catkin REQUIRED COMPONENTS
-    roscpp
-    std_msgs
-    )
+# find_package(catkin REQUIRED COMPONENTS
+#     roscpp
+#     std_msgs
+#     )
 
 find_package(Boost REQUIRED COMPONENTS filesystem program_options system)
 include_directories(${Boost_INCLUDE_DIRS})
@@ -20,16 +20,16 @@ find_package(Ceres REQUIRED)
 include_directories(${CERES_INCLUDE_DIRS})
 
 
-catkin_package(
-    INCLUDE_DIRS include
-    LIBRARIES camera_models
-    CATKIN_DEPENDS roscpp std_msgs
-#    DEPENDS system_lib
-    )
+# catkin_package(
+#     INCLUDE_DIRS include
+#     LIBRARIES camera_models
+#     CATKIN_DEPENDS roscpp std_msgs
+# #    DEPENDS system_lib
+#     )
 
-include_directories(
-    ${catkin_INCLUDE_DIRS}
-    )
+# include_directories(
+#     ${catkin_INCLUDE_DIRS}
+#     )
 
 include_directories("include")
 

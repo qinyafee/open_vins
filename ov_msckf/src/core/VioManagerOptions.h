@@ -240,7 +240,8 @@ namespace ov_msckf {
         // SIMULATOR ===============================
 
         /// Path to the trajectory we will b-spline and simulate on. Should be time(s),pos(xyz),ori(xyzw) format.
-        string sim_traj_path = "../ov_data/sim/udel_gore.txt";
+        // string sim_traj_path = "../ov_data/sim/udel_gore.txt";
+        string sim_traj_path = "/home/qyf/workspace/catkin_ws_ov/src/open_vins/ov_data/sim/udel_gore.txt";
 
         /// We will start simulating after we have moved this much along the b-spline. This prevents static starts as we init from groundtruth in simulation.
         double sim_distance_threshold = 1.0;

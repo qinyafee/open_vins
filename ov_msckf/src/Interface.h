@@ -9,6 +9,8 @@
 #include <opencv2/opencv.hpp>
 #include <Eigen/Eigen>
 
+
+
 struct ImagesInputData{
     long long ts;
     std::vector<cv::Mat> imgs;
@@ -43,6 +45,7 @@ void FeedImagesData(const ImagesInputData &data);
 void FeedImuData(const ImuInputData &data);
 
 void ObtainLocalizationResult(long long timestamp, LocalizationOutputResult &result);
+void ObtainLocalizationResult2(LocalizationOutputResult &result);
 
 std::vector<std::pair<int, int>> ObtainMatchingWithMap(long long timestamp);
 
