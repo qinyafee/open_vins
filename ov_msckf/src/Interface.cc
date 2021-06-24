@@ -49,9 +49,7 @@ void InitSystem(const std::string &config_file)
     sys = std::make_shared<VioManager>(params);
     // printf("config_file: %s\n", config_file.c_str());
     //for vins estimator
-    // readParameters(config_file);
-    // readParameters(params.path_vins_config);
-    readParameters("/home/qyf/workspace/catkin_ws_ov/src/open_vins/config/Pimax/20210318.yaml");
+    readParameters(params.path_vins_config);
     sys->vins_estimator.setParameter();
 
     mTimescale = 1e-6;

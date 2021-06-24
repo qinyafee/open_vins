@@ -1,0 +1,109 @@
+%YAML:1.0
+
+use_stereo: 1
+# imu starting thresholds
+init_window_time: 0.75
+init_imu_thresh: 1.5
+# saving trajectory path and timing information
+dosave   : 0
+dotime   : 0
+path_est : "/tmp/traj_estimate.txt"
+path_time: "/tmp/traj_timing.txt"
+
+stereo_pairs: [0,1]
+
+path_vins_config: "/home/qinyf1/1Code/open_vins/config/Pimax/20210318.yaml"
+
+max_clones: 11
+max_slam:  25
+max_slam_in_update: 50
+max_msckf_in_update: 999
+max_cameras: 2
+
+
+# gravity: [0.0,0.0,9.81]
+gravity: 9.81
+
+feat_rep_msckf: "ANCHORED_FULL_INVERSE_DEPTH" 
+feat_rep_slam : "ANCHORED_FULL_INVERSE_DEPTH"
+# feat_rep_aruco: "ANCHORED_FULL_INVERSE_DEPTH"
+
+use_fej: 0
+
+# tracker/extractor parameters 
+use_klt      : 1
+fast_threshold: 10
+grid_x       : 5
+grid_y       : 3
+min_px_dist  : 10 
+num_pts      : 400
+
+#imu parameters(continuous)      The more accurate parameters you provide, the better performance
+gyroscope_noise_density    : 2.0783740699543856e-02
+gyroscope_random_walk      : 3.0074367448324271e-05
+accelerometer_noise_density: 2.6561838800082605e-01
+accelerometer_random_walk  : 2.2683907382254142e-04
+
+# sensor noise values / update
+up_msckf_sigma_px : 1.0      
+up_msckf_chi2_multipler : 1
+up_slam_sigma_px : 1.0
+up_slam_chi2_multipler : 1
+up_aruco_sigma_px : 1.0
+up_aruco_chi2_multipler : 8
+
+
+cam0_is_fisheye: 1
+cam1_is_fisheye: 1
+
+
+# image_width: 480
+# image_height: 640
+
+
+cam0_k: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [1.9112260948019420e+02, 1.9091160293134550e+02, 2.3547339093016930e+02, 3.1815831887748914e+02]
+
+cam0_d: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [3.1527417655921192e-01, -7.3729202653204803e-02, -3.9199961175069645e-02, 1.7827027704898878e-02]
+
+cam1_k: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [1.9233863964135509e+02, 1.9204511667400706e+02, 2.3561384085453366e+02, 3.2616754838136444e+02]
+
+cam1_d: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [2.9145344262625589e-01, -1.6609781303169327e-02, -8.9154905822309949e-02, 3.1885286662976790e-02]
+
+
+T_C0toI: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [0.999983894889441, -0.00440793301419765, 0.00357492493439619, -0.0550008207495751,
+            -0.00287754519537642, -0.936717525267484, -0.350074274391033, -0.00975503300751726,
+            0.00489179878907415, 0.350058349398071, -0.936715123354644, -0.00132148792060240,
+            0.0, 0.0, 0.0, 1.0]
+
+T_C1toI: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [0.999979779601092, 0.00321408971638084, 0.00548725944753664, 0.0550783336255521,
+            0.00492884924818270, -0.936958488144209, -0.349405921443252, -0.00922981360292011,
+            0.00401831233706562, 0.349425902190742, -0.936955384233501, -0.00137057350466811,
+            0.0, 0.0, 0.0, 1.0]
+
+
+# vis
+show_pangolin: 1

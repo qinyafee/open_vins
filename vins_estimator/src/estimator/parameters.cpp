@@ -67,7 +67,7 @@ void readParameters(std::string config_file)
     cv::FileStorage fsSettings(config_file, cv::FileStorage::READ);
     if (!fsSettings.isOpened())
     {
-        std::cerr << "ERROR: Wrong path to settings" << std::endl;
+        std::cerr << "ERROR: Wrong path to vins fusion settings" << std::endl;
     }
 
     MAX_CNT = fsSettings["max_cnt"];

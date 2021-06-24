@@ -82,8 +82,10 @@ void viewResult(const std::string &config_file)
     cv::FileStorage fs;
     fs.open(config_file, cv::FileStorage::READ);
     cv::Mat Tbc0, Tbc1;
-    fs["body_T_cam0"] >> Tbc0;
-    fs["body_T_cam1"] >> Tbc1;
+    // fs["body_T_cam0"] >> Tbc0;
+    // fs["body_T_cam1"] >> Tbc1;
+    fs["T_C0toI"] >> Tbc0;
+    fs["T_C1toI"] >> Tbc1;
     Eigen::Matrix4d T_bc0, T_bc1;
     cv::cv2eigen(Tbc0, T_bc0);
     cv::cv2eigen(Tbc1, T_bc1);
@@ -324,7 +326,8 @@ int main(int argc, char **argv)
     std::string seq_file = basePath + "/seq.txt";
     
     // Read in our openvins parameters
-    params = parse_command_line_arguments(argc, argv);
+    // params = parse_command_line_arguments(argc, argv);
+    params = parse_ov(argv[1]);
     InitSystem(configPath);
     size_t num = 5;
     std::map<long long, std::vector<SensorType>> data_sequence;
@@ -370,15 +373,15 @@ int main(int argc, char **argv)
     }
     f_imu.close();
 
-    // cv::FileStorage fs;
-    // fs.open(configPath, cv::FileStorage::READ);
-    // int showPangolin = fs["show_pangolin"];
-    // fs.release();
-    // if (showPangolin)
-    // {
-    //     std::thread viewer_th = std::thread(&viewResult, std::ref(configPath));
-    //     viewer_th.detach();
-    // }
+    cv::FileStorage fs;
+    fs.open(configPath, cv::FileStorage::READ);
+    int showPangolin = fs["show_pangolin"];
+    fs.release();
+    if (showPangolin)
+    {
+        std::thread viewer_th = std::thread(&viewResult, std::ref(configPath));
+        viewer_th.detach();
+    }
 
     std::map<long long, std::string> ts_file_map;
 

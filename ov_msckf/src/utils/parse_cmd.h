@@ -29,6 +29,323 @@ namespace ov_msckf {
 
 
 
+VioManagerOptions parse_ov(std::string config_file) {
+
+    cv::FileStorage fsSettings(config_file, cv::FileStorage::READ);
+    if (!fsSettings.isOpened())
+    {
+        std::cerr << "ERROR: Wrong path to ov settings" << std::endl;
+    }
+
+    cv::FileNode node;
+
+    // Our vio manager options with defaults
+    VioManagerOptions params;
+
+    // ESTIMATOR ======================================================================
+
+    // Main EKF parameters
+    int use_fej = fsSettings["use_fej"];
+    params.state_options.do_fej = use_fej;
+    // params.state_options.imu_avg = ;
+    // params.state_options.use_rk4_integration = ;
+    // params.state_options.do_calib_camera_pose = ;
+    // params.state_options.do_calib_camera_intrinsics = ;
+    // params.state_options.do_calib_camera_timeoffset = ;
+    params.state_options.max_clone_size = fsSettings["max_clones"];
+    params.state_options.max_slam_features = fsSettings["max_slam"];
+    params.state_options.max_slam_in_update = fsSettings["max_slam_in_update"];
+    params.state_options.max_msckf_in_update = fsSettings["max_msckf_in_update"];
+    params.state_options.max_aruco_features = fsSettings["max_aruco"];
+    params.state_options.num_cameras = fsSettings["max_cameras"];
+    params.dt_slam_delay = fsSettings["dt_slam_delay"];
+    fsSettings["path_vins_config"] >> params.path_vins_config;
+
+    // Stereo pairs
+    std::vector<int> stereo_pairs;
+    //TODOs
+    stereo_pairs.push_back(0);
+    stereo_pairs.push_back(1);
+    // app1.add_option("--stereo_pairs", stereo_pairs = ;
+
+    // Read in what representation our feature is
+    std::string feat_rep_msckf_str = "GLOBAL_3D";
+    std::string feat_rep_slam_str = "GLOBAL_3D";
+    std::string feat_rep_aruco_str = "GLOBAL_3D";
+
+    node = fsSettings["feat_rep_msckf"];
+    if(!node.empty())
+    {
+        node >> feat_rep_msckf_str;
+    }
+    node = fsSettings["feat_rep_slam"];
+    if(!node.empty())
+    {
+        node >> feat_rep_slam_str;
+    }
+    node = fsSettings["feat_rep_aruco"];
+    if(!node.empty())
+    {
+        node >> feat_rep_aruco_str;
+    }
+
+    // Filter initialization
+    params.init_window_time =fsSettings["init_window_time"];
+    params.init_imu_thresh = fsSettings["init_imu_thresh"];
+
+    // Zero velocity update
+    int zupt = fsSettings["try_zupt"];
+    params.try_zupt = zupt;
+    params.zupt_options.chi2_multipler = fsSettings["zupt_chi2_multipler"];
+    params.zupt_max_velocity = fsSettings["zupt_max_velocity"];
+    params.zupt_noise_multiplier = fsSettings["zupt_noise_multiplier"];
+
+    // Recording of timing information to file
+    // app1.add_option("--record_timing_information", params.record_timing_information = ;
+    // app1.add_option("--record_timing_filepath", params.record_timing_filepath = ;
+
+    // NOISE ======================================================================
+
+    // Our noise values for inertial sensor
+    params.imu_noises.sigma_w = fsSettings["gyroscope_noise_density"];
+    params.imu_noises.sigma_a = fsSettings["accelerometer_noise_density"];
+    params.imu_noises.sigma_wb = fsSettings["gyroscope_random_walk"];
+    params.imu_noises.sigma_ab = fsSettings["accelerometer_random_walk"];
+
+    // Read in update parameters
+    params.msckf_options.sigma_pix = fsSettings["up_msckf_sigma_px"];
+    params.msckf_options.chi2_multipler = fsSettings["up_msckf_chi2_multipler"];
+    params.slam_options.sigma_pix = fsSettings["up_slam_sigma_px"];
+    params.slam_options.chi2_multipler = fsSettings["up_slam_chi2_multipler"];
+    params.aruco_options.sigma_pix = fsSettings["up_aruco_sigma_px"];
+    params.aruco_options.chi2_multipler = fsSettings["up_aruco_chi2_multipler"];
+
+    // STATE ======================================================================
+
+    // Timeoffset from camera to IMU
+    params.calib_camimu_dt = fsSettings["calib_camimu_dt"];
+
+    // Global gravity
+    std::vector<double> gravity = {params.gravity(0), params.gravity(1), params.gravity(2)};
+    gravity[2] = fsSettings["gravity"];
+
+
+    // TRACKERS ======================================================================
+
+    // Tracking flags
+    int use_stereo = fsSettings["use_stereo"];
+    params.use_stereo = use_stereo;
+    int use_klt = fsSettings["use_klt"];
+    params.use_klt = use_klt;
+    int use_aruco = fsSettings["use_aruco"];
+    params.use_aruco = use_aruco;
+    int downsize_aruco = fsSettings["downsize_aruco"];
+    params.downsize_aruco = downsize_aruco;
+    int downsample_cameras = fsSettings["downsample_cameras"];
+    params.downsample_cameras = downsample_cameras;
+    int multi_threading = fsSettings["multi_threading"];
+    params.use_multi_threading = multi_threading;
+
+    // General parameters
+    params.num_pts = fsSettings["num_pts"];
+    params.fast_threshold = fsSettings["fast_threshold"];
+    params.grid_x = fsSettings["grid_x"];
+    params.grid_y = fsSettings["grid_y"];
+    params.min_px_dist = fsSettings["min_px_dist"];
+    params.knn_ratio = fsSettings["knn_ratio"];
+
+    // // Feature initializer parameters
+    // fsSettings["fi_triangulate_1d", params.featinit_options.triangulate_1d = ;
+    // fsSettings["fi_refine_features", params.featinit_options.refine_features = ;
+    // fsSettings["fi_max_runs", params.featinit_options.max_runs = ;
+    // fsSettings["fi_init_lamda", params.featinit_options.init_lamda = ;
+    // fsSettings["fi_max_lamda", params.featinit_options.max_lamda = ;
+    // fsSettings["fi_min_dx", params.featinit_options.min_dx = ;
+    // fsSettings["fi_min_dcost", params.featinit_options.min_dcost = ;
+    // fsSettings["fi_lam_mult", params.featinit_options.lam_mult = ;
+    // fsSettings["fi_min_dist", params.featinit_options.min_dist = ;
+    // fsSettings["fi_max_dist", params.featinit_options.max_dist = ;
+    // fsSettings["fi_max_baseline", params.featinit_options.max_baseline = ;
+    // fsSettings["fi_max_cond_number", params.featinit_options.max_cond_number = ;
+
+
+    // SIMULATION ======================================================================
+
+    // // Load the groundtruth trajectory and its spline
+    // app1.add_option("--sim_traj_path", params.sim_traj_path = ;
+    // app1.add_option("--sim_distance_threshold", params.sim_distance_threshold = ;
+    // app1.add_option("--sim_do_perturbation", params.sim_do_perturbation = ;
+
+    // // Read in sensor simulation frequencies
+    // app1.add_option("--sim_freq_cam", params.sim_freq_cam = ;
+    // app1.add_option("--sim_freq_imu", params.sim_freq_imu = ;
+
+    // // Load the seeds for the random number generators
+    // app1.add_option("--sim_seed_state_init", params.sim_seed_state_init = ;
+    // app1.add_option("--sim_seed_preturb", params.sim_seed_preturb = ;
+    // app1.add_option("--sim_seed_measurements", params.sim_seed_measurements = ;
+
+
+
+    // Read in stereo pair information
+    if(stereo_pairs.size() % 2 != 0) {
+        printf(RED "VioManager(): Specified number of stereo pair IDs needs to be even\n" RESET);
+        printf(RED "VioManager(): Example: (0,1,2,3) -> stereo tracking between 01 and 23\n" RESET);
+        std::exit(EXIT_FAILURE);
+    }
+    for(size_t i=0; i<stereo_pairs.size(); i++) {
+        if(std::count(stereo_pairs.begin(),stereo_pairs.end(),stereo_pairs.at(i)) != 1) {
+            printf(RED "VioManager(): You can do stereo tracking between unique ids\n" RESET);
+            printf(RED "VioManager(): %d showed up multiple times\n" RESET,stereo_pairs.at(i));
+            std::exit(EXIT_FAILURE);
+        }
+        //if(stereo_pairs.at(i) >= params.state_options.num_cameras) {
+        //    printf(RED "VioManager(): Stereo pair has an id larger then the max camera\n" RESET);
+        //    printf(RED "VioManager(): %d is >= than %d\n" RESET,stereo_pairs.at(i),params.state_options.num_cameras);
+        //    std::exit(EXIT_FAILURE);
+        //}
+    }
+    std::vector<int> valid_stereo_pairs;
+    for(size_t i=0; i<stereo_pairs.size(); i+=2) {
+        if(stereo_pairs.at(i) >= params.state_options.num_cameras || stereo_pairs.at(i+1) >= params.state_options.num_cameras) {
+            printf(RED "ignoring invalid stereo pair: %d, %d\n" RESET, stereo_pairs.at(i), stereo_pairs.at(i+1));
+            continue;
+        }
+        params.stereo_pairs.emplace_back(stereo_pairs.at(i),stereo_pairs.at(i+1));
+        valid_stereo_pairs.push_back(stereo_pairs.at(i));
+        valid_stereo_pairs.push_back(stereo_pairs.at(i+1));
+    }
+
+    // Calculate number of unique image camera image streams
+    params.state_options.num_unique_cameras = (int)params.stereo_pairs.size();
+    for(int i=0; i<params.state_options.num_cameras; i++) {
+        if(std::find(valid_stereo_pairs.begin(),valid_stereo_pairs.end(),i)!=valid_stereo_pairs.end())
+            continue;
+        params.state_options.num_unique_cameras++;
+    }
+
+    // Set what representation we should be using
+    std::transform(feat_rep_msckf_str.begin(), feat_rep_msckf_str.end(),feat_rep_msckf_str.begin(), ::toupper);
+    std::transform(feat_rep_slam_str.begin(), feat_rep_slam_str.end(),feat_rep_slam_str.begin(), ::toupper);
+    std::transform(feat_rep_aruco_str.begin(), feat_rep_aruco_str.end(),feat_rep_aruco_str.begin(), ::toupper);
+    params.state_options.feat_rep_msckf = LandmarkRepresentation::from_string(feat_rep_msckf_str);
+    params.state_options.feat_rep_slam = LandmarkRepresentation::from_string(feat_rep_slam_str);
+    params.state_options.feat_rep_aruco = LandmarkRepresentation::from_string(feat_rep_aruco_str);
+    if(params.state_options.feat_rep_msckf == LandmarkRepresentation::Representation::UNKNOWN ||
+    params.state_options.feat_rep_slam == LandmarkRepresentation::Representation::UNKNOWN ||
+    params.state_options.feat_rep_aruco == LandmarkRepresentation::Representation::UNKNOWN) {
+        printf(RED "VioManager(): invalid feature representation specified:\n" RESET);
+        printf(RED "\t- GLOBAL_3D\n" RESET);
+        printf(RED "\t- GLOBAL_FULL_INVERSE_DEPTH\n" RESET);
+        printf(RED "\t- ANCHORED_3D\n" RESET);
+        printf(RED "\t- ANCHORED_FULL_INVERSE_DEPTH\n" RESET);
+        printf(RED "\t- ANCHORED_MSCKF_INVERSE_DEPTH\n" RESET);
+        printf(RED "\t- ANCHORED_INVERSE_DEPTH_SINGLE\n" RESET);
+        std::exit(EXIT_FAILURE);
+    }
+
+    // Parse gravity
+    assert(gravity.size()==3);
+    params.gravity << gravity.at(0), gravity.at(1), gravity.at(2);
+
+    // Enforce that we have enough cameras to run
+    if(params.state_options.num_cameras < 1) {
+        printf(RED "VioManager(): Specified number of cameras needs to be greater than zero\n" RESET);
+        printf(RED "VioManager(): num cameras = %d\n" RESET, params.state_options.num_cameras);
+        std::exit(EXIT_FAILURE);
+    }
+
+    //====================================================================================
+    //====================================================================================
+    //====================================================================================
+
+    // Set the defaults
+    std::vector<int> p_fish;
+    std::vector<std::vector<double>> p_intrinsic;
+    std::vector<std::vector<double>> p_extrinsic;
+    std::vector<std::vector<int>> p_wh;
+    for(int i=0; i<params.state_options.num_cameras; i++) {
+        p_fish.push_back(false);
+        // p_intrinsic.push_back({458.654,457.296,367.215,248.375,-0.28340811,0.07395907,0.00019359,1.76187114e-05});
+        // p_extrinsic.push_back({0,0,0,1,0,0,0});
+
+        p_wh.push_back({480,640});
+        p_fish.at(i) =fsSettings["cam"+std::to_string(i)+"_is_fisheye"];
+
+        // p_intrinsic.at(i) = ;
+        cv::Mat cv_K;
+        fsSettings["cam"+std::to_string(i)+"_k"] >>cv_K;
+        Eigen::Matrix<double, 4, 1> K;
+        cv::cv2eigen(cv_K, K);
+
+        cv::Mat cv_D;
+        fsSettings["cam"+std::to_string(i)+"_d"] >>cv_D;
+        Eigen::Matrix<double, 4, 1> D;
+        cv::cv2eigen(cv_D, D);
+
+        Eigen::Matrix<double,8,1> cam_calib;
+        cam_calib << K(0, 0), K(1, 0), K(2, 0), K(3, 0),
+                     D(0, 0), D(1, 0), D(2, 0), D(3, 0);
+
+        cv::Mat cv_T;
+        fsSettings["T_C"+std::to_string(i)+"toI"] >> cv_T;
+        Eigen::Matrix4d T_CtoI;
+        cv::cv2eigen(cv_T, T_CtoI);
+
+        // Load these into our state
+        Eigen::Matrix<double,7,1> cam_extrin;
+        cam_extrin.block(0,0,4,1) = rot_2_quat(T_CtoI.block(0,0,3,3).transpose());
+        cam_extrin.block(4,0,3,1) = -T_CtoI.block(0,0,3,3).transpose()*T_CtoI.block(0,3,3,1);
+
+        // p_extrinsic.at(i) = cam_eigen;
+        // p_wh.at(i) = fsSettings["cam"+std::to_string(i)+"_wh"];
+
+        // Insert
+        params.camera_fisheye.insert({i, p_fish.at(i)});
+        params.camera_intrinsics.insert({i, cam_calib});
+        params.camera_extrinsics.insert({i, cam_extrin});
+        params.camera_wh.insert({i, {p_wh.at(i).at(0),p_wh.at(i).at(1)}});    
+    
+    }
+
+
+    // // Finally load it into our params
+    // for(int i=0; i<params.state_options.num_cameras; i++) {
+
+    //     // Halve if we are doing downsampling
+    //     p_wh.at(i).at(0) /= (params.downsample_cameras) ? 2.0 : 1.0;
+    //     p_wh.at(i).at(1) /= (params.downsample_cameras) ? 2.0 : 1.0;
+    //     p_intrinsic.at(i).at(0) /= (params.downsample_cameras) ? 2.0 : 1.0;
+    //     p_intrinsic.at(i).at(1) /= (params.downsample_cameras) ? 2.0 : 1.0;
+    //     p_intrinsic.at(i).at(2) /= (params.downsample_cameras) ? 2.0 : 1.0;
+    //     p_intrinsic.at(i).at(3) /= (params.downsample_cameras) ? 2.0 : 1.0;
+
+    //     // Convert to Eigen
+    //     assert(p_intrinsic.at(i).size()==8);
+    //     Eigen::Matrix<double,8,1> intrinsics;
+    //     intrinsics << p_intrinsic.at(i).at(0),p_intrinsic.at(i).at(1),p_intrinsic.at(i).at(2),p_intrinsic.at(i).at(3),
+    //             p_intrinsic.at(i).at(4),p_intrinsic.at(i).at(5),p_intrinsic.at(i).at(6),p_intrinsic.at(i).at(7);
+    //     assert(p_extrinsic.at(i).size()==7);
+    //     Eigen::Matrix<double,7,1> extrinsics;
+    //     extrinsics << p_extrinsic.at(i).at(0),p_extrinsic.at(i).at(1),p_extrinsic.at(i).at(2),p_extrinsic.at(i).at(3),
+    //             p_extrinsic.at(i).at(4),p_extrinsic.at(i).at(5),p_extrinsic.at(i).at(6);
+    //     assert(p_wh.at(i).size()==2);
+
+    //     // Insert
+    //     params.camera_fisheye.insert({i, p_fish.at(i)});
+    //     params.camera_intrinsics.insert({i, intrinsics});
+    //     params.camera_extrinsics.insert({i, extrinsics});
+    //     params.camera_wh.insert({i, {p_wh.at(i).at(0),p_wh.at(i).at(1)}});
+
+    // }
+
+    fsSettings.release();
+    // Success, lets returned the parsed options
+    return params;
+
+}
+
+
     /**
      * @brief This function will parse the command line arugments using [CLI11](https://github.com/CLIUtils/CLI11).
      * This is only used if you are not building with ROS, and thus isn't the primary supported way to pass arguments.

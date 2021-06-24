@@ -3,8 +3,8 @@
 
 #include <boost/shared_ptr.hpp>
 #include <opencv2/core/core.hpp>
-#include "/home/qyf/workspace/catkin_ws_ov/src/open_vins/camera_models/include/camodocal/camera_models/Camera.h"
-// #include "camodocal/camera_models/Camera.h"
+// #include "/home/qyf/workspace/catkin_ws_ov/src/open_vins/camera_models/include/camodocal/camera_models/Camera.h"
+#include "camodocal/camera_models/Camera.h"
 
 namespace camodocal
 {

@@ -14,7 +14,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fPIC")
 find_package(Boost REQUIRED COMPONENTS filesystem program_options system)
 include_directories(${Boost_INCLUDE_DIRS})
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 3 REQUIRED)
 
 # set(EIGEN_INCLUDE_DIR "/usr/local/include/eigen3")
 find_package(Ceres REQUIRED)

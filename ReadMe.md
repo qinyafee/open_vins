@@ -6,7 +6,9 @@ roslaunch ov_msckf 20210318.launch
 
 # if with out ros
 cd build
-./ov_msckf/test_ov_main /home/qyf/workspace/catkin_ws_ov/src/open_vins/ov_msckf/launch/20210318.launch /home/qyf/0Data/20210318
+./ov_msckf/test_ov_main /home/qyf/workspace/catkin_ws_ov/src/open_vins/config/Pimax/20210318_ov.yaml /home/qyf/0Data/20210318
+
+./ov_msckf/test_ov_main ~/1Code/open_vins/config/Pimax/20210318_ov.yaml ~/0Data/pimax/20210318
 
 Below is original
 -----------------------------
