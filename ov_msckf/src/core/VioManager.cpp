@@ -354,6 +354,7 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
                     // imustate.block((0, 0, 4, 1)) = vins_estimator.latest_acc_0;
                     // imustate.block((0, 0, 4, 1)) = vins_estimator.latest_gyr_0;
                     initialize_with_gt(imustate); //set is_initialized_vio=true here
+                    return;
                 }
             }
             else
