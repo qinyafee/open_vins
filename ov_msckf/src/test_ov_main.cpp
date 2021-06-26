@@ -97,7 +97,10 @@ void viewResult(const std::string &config_file)
 
     pangolin::CreatePanel("menu").SetBounds(0.0, 1.0, 0.0, pangolin::Attach::Pix(175));
     pangolin::Var<bool> menuFollowCamera("menu.Follow Camera", false, true);
-    pangolin::Var<bool> menuShowPoints("menu.Show Points", true, true);
+    // pangolin::Var<bool> menuShowPoints("menu.Show Points", true, true);
+    pangolin::Var<bool> menuShowFeats_msckf("menu.Show Feats_msckf", true, true);
+    pangolin::Var<bool> menuShowFeats_slam("menu.Show Feats_slam", true, true);
+
     pangolin::Var<bool> menuShowGrid("menu.Show Grid", true, true);
     pangolin::Var<bool> menuShowHistoricalTrajectory("menu.Show Trajectory", true, true);
     pangolin::Var<bool> menuShowVelocityDir("menu.Show Velocity", false, true);
@@ -207,7 +210,41 @@ void viewResult(const std::string &config_file)
             glEnd();
         }
 
-        if(menuShowPoints)
+        if(menuShowFeats_msckf)
+        {
+            std::vector<Eigen::Vector3d> landmarks = result_buffer.rbegin()->second.feats_msckf;
+            if(landmarks.empty())
+                continue;
+            for(size_t i = 0; i < landmarks.size(); i++)
+            {
+
+                glColor3f(1.0, 0.0, 0.0); // red
+                glBegin(GL_POINTS);
+                glVertex3f(landmarks[i][0], landmarks[i][1], landmarks[i][2]);
+                glEnd();
+            }
+
+            // std::cout << "_______________________\n";
+            // lm << landmark[0], landmark[1], landmark[2], it.feature_id, it.feature_per_frame.size(), it.estimated_depth;
+        }
+        if(menuShowFeats_slam)
+        {
+            std::vector<Eigen::Vector3d> landmarks = result_buffer.rbegin()->second.feats_slam;
+            if(landmarks.empty())
+                continue;
+            for(size_t i = 0; i < landmarks.size(); i++)
+            {
+
+                glColor3f(0.0, 0.0, 1.0); // blue
+                glBegin(GL_POINTS);
+                glVertex3f(landmarks[i][0], landmarks[i][1], landmarks[i][2]);
+                glEnd();
+            }
+
+            // std::cout << "_______________________\n";
+            // lm << landmark[0], landmark[1], landmark[2], it.feature_id, it.feature_per_frame.size(), it.estimated_depth;
+        }
+/*        if(menuShowPoints)
         {
             std::vector<std::vector<Eigen::Matrix<double, 6, 1>>> landmarks = result_buffer.rbegin()->second.landmarks;
 
@@ -280,7 +317,7 @@ void viewResult(const std::string &config_file)
                 }
             }
         }
-
+*/
         if (menuFollowCamera)
         {
             pangolin::OpenGlMatrix Twc_gl;
@@ -411,7 +448,7 @@ int main(int argc, char **argv)
             LocalizationOutputResult result;
             // ObtainLocalizationResult(timestamp, result);
             ObtainLocalizationResult2(result);
-            if(result.valid)
+            //if(result.valid)
             {
                 std::unique_lock<std::mutex> lock(result_mtx);
                 {

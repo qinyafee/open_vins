@@ -34,6 +34,10 @@ struct LocalizationOutputResult {
     Eigen::Vector3d ba;
     Eigen::Vector3d bw;
     std::vector<std::vector<Eigen::Matrix<double, 6, 1>>> landmarks;
+
+    std::vector<Eigen::Vector3d> feats_msckf;
+    std::vector<Eigen::Vector3d> feats_slam;
+    std::vector<Eigen::Vector3d> feats_aruco;
     bool valid;
 };
 

@@ -178,12 +178,24 @@ void ObtainLocalizationResult2(LocalizationOutputResult &result){
     
     result.t = pstate->_imu->pos();
     result.R = quat_2_Rot(pstate->_imu->quat());
-    // result.v = ;
+    result.v = pstate->_imu->vel();
     // result.gyro = ;
     // result.acc = ;
     result.ts = pstate->_timestamp;
-    result.ba.setZero();
-    result.bw.setZero();
+    // result.ba.setZero();
+    // result.bw.setZero();
+    result.ba = pstate->_imu->bias_a();
+    result.bw = pstate->_imu->bias_g();
+
+    // Get our good features
+    result.feats_msckf = sys->get_good_features_MSCKF();
+
+    // Get our slam features
+    result.feats_slam = sys->get_features_SLAM();
+
+    // Get our ARUCO features
+    result.feats_aruco = sys->get_features_ARUCO();
+
 }
 
 /*

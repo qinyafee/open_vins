@@ -24,8 +24,8 @@
         <rosparam param="stereo_pairs">[0,1]</rosparam>
 
         <!-- vins config path -->
-        <!-- <param name="path_vins_config"    type="string" value="/home/qyf/workspace/catkin_ws_ov/src/open_vins/config/Pimax/20210318.yaml" /> -->
-        <param name="path_vins_config"    type="string" value="~/1Code/open_vins/config/Pimax/20210318.yaml" />
+        <!-- <param name="path_vins_config"    type="string" value="/home/qyf/workspace/catkin_ws_ov/src/open_vins/config/Pimax/20210318_vf.yaml" /> -->
+        <param name="path_vins_config"    type="string" value="~/1Code/open_vins/config/Pimax/20210318_vf.yaml" />
         <!-- bag parameters -->
         <param name="path_bag"    type="string" value="/home/qyf/0Data/20210318/pimax_ns.bag" />
         <param name="bag_start"   type="int"    value="0" />

@@ -19,11 +19,6 @@
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Dense>
 
-
-// #include "/home/qyf/workspace/catkin_ws_ov/src/open_vins/camera_models/include/camodocal/camera_models/CameraFactory.h"
-// #include "/home/qyf/workspace/catkin_ws_ov/src/open_vins/camera_models/include/camodocal/camera_models/CataCamera.h"
-// #include "/home/qyf/workspace/catkin_ws_ov/src/open_vins/camera_models/include/camodocal/camera_models/PinholeCamera.h"
-
 #include "camodocal/camera_models/CameraFactory.h"
 #include "camodocal/camera_models/CataCamera.h"
 #include "camodocal/camera_models/PinholeCamera.h"
