@@ -10,7 +10,7 @@
 #pragma once
 
 #include <cstdlib>
-#include <thread>
+#include <pthread.h>
 #include <ceres/ceres.h>
 #include <unordered_map>
 

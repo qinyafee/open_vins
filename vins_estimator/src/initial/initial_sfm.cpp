@@ -144,20 +144,12 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
 	//cout << "init t_l " << T[l].transpose() << endl;
 
 	//rotate to cam frame
-	Matrix3d* c_Rotation = new Matrix3d[frame_num];
-	Vector3d* c_Translation = new Vector3d[frame_num];
-	Quaterniond* c_Quat = new Quaterniond[frame_num];
-	auto c_rotation = new double[frame_num][4];
-	auto c_translation = new double[frame_num][3];
-	Eigen::Matrix<double, 3, 4>* Pose = new Eigen::Matrix<double, 3, 4>[frame_num];
-
-	std::shared_ptr<Matrix3d> ac_Rotation(c_Rotation);
-	std::shared_ptr<Vector3d> ac_Translation(c_Translation);
-	std::shared_ptr<Quaterniond> ac_Quat(c_Quat);
-	std::shared_ptr<double [][4]> ac_rotation(c_rotation);
-	std::shared_ptr<double [][3]> ac_translation(c_translation);
-	std::shared_ptr<Eigen::Matrix<double, 3, 4>> aPose(Pose);
-
+	Matrix3d c_Rotation[frame_num];
+	Vector3d c_Translation[frame_num];
+	Quaterniond c_Quat[frame_num];
+	double c_rotation[frame_num][4];
+	double c_translation[frame_num][3];
+	Eigen::Matrix<double, 3, 4> Pose[frame_num];
 
 	c_Quat[l] = q[l].inverse();
 	c_Rotation[l] = c_Quat[l].toRotationMatrix();

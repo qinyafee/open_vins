@@ -59,8 +59,8 @@ int main(int argc, char **argv) {
     nh.getParam("path_vins_config", config_file);
     // string config_file = "~/workspace/vins_fusion_ws/src/VINS-Fusion/config/euroc/20210318_vf.yaml";
     printf("config_file: %s\n", config_file.c_str());
-    readParameters(config_file);// 读取参数
-    sys->vins_estimator.setParameter();// 设置参数
+    readParameters(config_file);
+    sys->vins_estimator.setParameter();
 
   //===================================================================================
   //===================================================================================

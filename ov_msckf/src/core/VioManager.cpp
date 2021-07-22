@@ -153,7 +153,7 @@ void VioManager::feed_measurement_imu(const ov_core::ImuData &message) {
 	  initializer->feed_imu(message);
   }
 #else
-   if(vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL) {
+  if(vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL) {
         vins_estimator.inputIMU(message.timestamp, message.am, message.wm);
   }
 #endif

@@ -356,7 +356,7 @@ int main(int argc, char **argv)
         std::cout << "Usage: ./bin config_path basePath\n";
         //return 0;
     }
-#if 0
+#if 1
     std::string configPath = argv[1];
 	std::string vins_configPath = argv[2];
     std::string basePath = argv[3];

@@ -607,11 +607,8 @@ bool Estimator::initialStructure()
         }
     }
     // global sfm
-	Quaterniond* Q = new Quaterniond[frame_count + 1];
-	Vector3d* T = new Vector3d[frame_count + 1];
-	std::unique_ptr<Quaterniond> aQ(Q);
-	std::unique_ptr<Vector3d> aT(T);
-
+    Quaterniond Q[frame_count + 1];
+    Vector3d T[frame_count + 1];
     map<int, Vector3d> sfm_tracked_points;
     vector<SFMFeature> sfm_f;
     for (auto &it_per_id : f_manager.feature)

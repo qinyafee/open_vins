@@ -52,8 +52,6 @@
 // #include "utils/Math.h"
 #include "estimator/estimator.h"
 #include "estimator/parameters.h"
-// #include "vins_estimator/src/estimator/estimator.h"
-// #include "~/catkin_ws_ov/src/open_vins/vins_estimator/src/estimator/estimator.h"
 namespace ov_msckf {
 
 /**
@@ -66,8 +64,9 @@ namespace ov_msckf {
 class VioManager {
 
 public:
-        Estimator vins_estimator; //申明一个estimator，也就是VIO。自动执行该类的构造函数
-  /**
+  Estimator vins_estimator;
+
+  /*
    * @brief Default constructor, will load all configuration variables
    * @param params_ Parameters loaded from either ROS or CMDLINE
    */

@@ -2,7 +2,6 @@
 
 #include <set>
 #ifdef _WIN32
-#define NOMINMAX
 #include <winsock.h>
 #else
 #include <time.h>
@@ -83,11 +82,9 @@ double sinc(double theta)
 }
 
 #ifdef _WIN32
-#include <time.h>
 #include <sys/timeb.h>
 #include <sys/types.h>
 #include <winsock.h>
-#define CLOCK_REALTIME 0
 LARGE_INTEGER
 getFILETIMEoffset()
 {
