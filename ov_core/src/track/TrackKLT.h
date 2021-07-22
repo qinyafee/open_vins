@@ -133,6 +133,8 @@ protected:
   // Minimum pixel distance to be "far away enough" to be a different extracted feature
   int min_px_dist;
 
+        // Minimum points matches for ransac
+        int min_matches = 10;
   // How many pyramid levels to track on and the window size to reduce by
   int pyr_levels = 3;
   cv::Size win_size = cv::Size(15, 15);

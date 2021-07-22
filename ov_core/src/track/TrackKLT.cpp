@@ -173,6 +173,18 @@ void TrackKLT::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat &img_r
                            ids_last[cam_id_left], ids_last[cam_id_right]);
   rT3 = boost::posix_time::microsec_clock::local_time();
 
+    if(pts_last[cam_id_left].size() < min_matches || pts_last[cam_id_right].size() < min_matches){
+        printf(RED "[KLT-EXTRACTOR]: Failed to get enough points [%d] to perform matching, resetting.....", pts_last[cam_id_left].size());
+		img_last[cam_id_left] = std::move(img_left);
+		img_last[cam_id_right] = std::move(img_right);
+		img_pyramid_last[cam_id_left] = std::move(imgpyr_left);
+		img_pyramid_last[cam_id_right] = std::move(imgpyr_right);
+		pts_last[cam_id_left].clear();
+		pts_last[cam_id_right].clear();
+		ids_last[cam_id_left].clear();
+		ids_last[cam_id_right].clear();
+        return;
+    }
   //===================================================================================
   //===================================================================================
 

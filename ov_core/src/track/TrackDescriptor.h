@@ -156,6 +156,8 @@ protected:
   // then the two features are too close, so should be considered ambiguous/bad match
   double knn_ratio;
 
+  // Minimum points matches for ransac
+  int min_matches = 10;
   // Descriptor matrices
   std::unordered_map<size_t, cv::Mat> desc_last;
 };

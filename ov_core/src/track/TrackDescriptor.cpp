@@ -163,6 +163,18 @@ void TrackDescriptor::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat
                            ids_left_new, ids_right_new);
   rT2 = boost::posix_time::microsec_clock::local_time();
 
+    if(pts_left_new.size() < min_matches || pts_right_new.size() < min_matches){
+        printf(RED "[Descr-EXTRACTOR]: Failed to get enough points [%d] to do RANSAC, resetting.....",pts_left_new.size());
+        img_last[cam_id_left] = img_left.clone();
+        img_last[cam_id_right] = img_right.clone();
+        pts_last[cam_id_left] = pts_left_new;
+        pts_last[cam_id_right] = pts_right_new;
+        ids_last[cam_id_left] = ids_left_new;
+        ids_last[cam_id_right] = ids_right_new;
+        desc_last[cam_id_left] = desc_left_new;
+        desc_last[cam_id_right] = desc_right_new;
+        return;
+    }
   //===================================================================================
   //===================================================================================
 
@@ -179,6 +191,18 @@ void TrackDescriptor::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat
                 }));
   rT3 = boost::posix_time::microsec_clock::local_time();
 
+    if(matches_ll.empty() || matches_rr.empty()) {
+        printf(RED "[Descr-EXTRACTOR]: Failed to get enough points [%d] to do update, resetting.....",matches_ll.size());
+        img_last[cam_id_left] = img_left.clone();
+        img_last[cam_id_right] = img_right.clone();
+        pts_last[cam_id_left] = pts_left_new;
+        pts_last[cam_id_right] = pts_right_new;
+        ids_last[cam_id_left] = ids_left_new;
+        ids_last[cam_id_right] = ids_right_new;
+        desc_last[cam_id_left] = desc_left_new;
+        desc_last[cam_id_right] = desc_right_new;
+        return;
+    }
   //===================================================================================
   //===================================================================================
 
@@ -376,7 +400,7 @@ void TrackDescriptor::robust_match(std::vector<cv::KeyPoint> &pts0, std::vector<
   }
 
   // If we don't have enough points for ransac just return empty
-  if (pts0_rsc.size() < 10)
+  if(pts0_rsc.size() < min_matches)
     return;
 
   // Normalize these points, so we can then do ransac

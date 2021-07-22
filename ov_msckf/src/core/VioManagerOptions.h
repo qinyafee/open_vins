@@ -222,6 +222,8 @@ struct VioManagerOptions {
   /// KNN ration between top two descriptor matcher which is required to be a good match
   double knn_ratio = 0.85;
 
+        /// Minimum points matches for ransac
+        int min_matches = 10;
   /// Parameters used by our feature initialize / triangulator
   FeatureInitializerOptions featinit_options;
 
@@ -285,6 +287,8 @@ struct VioManagerOptions {
     printf("\t- cam feq: %.2f\n", sim_freq_cam);
     printf("\t- imu feq: %.2f\n", sim_freq_imu);
   }
+        /// The path vins_config
+        std::string path_vins_config;
 };
 
 } // namespace ov_msckf

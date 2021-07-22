@@ -69,7 +69,7 @@ bool UpdaterZeroVelocity::try_update(std::shared_ptr<State> state, double timest
 
   // If we should integrate the acceleration and say the velocity should be zero
   // Also if we should still inflate the bias based on their random walk noises
-  bool integrated_accel_constraint = false;
+  bool integrated_accel_constraint = true;
   bool model_time_varying_bias = true;
   bool override_with_disparity_check = true;
   bool explicitly_enforce_zero_motion = false;
@@ -204,8 +204,8 @@ bool UpdaterZeroVelocity::try_update(std::shared_ptr<State> state, double timest
     if (disparity_passed) {
       printf(CYAN "[ZUPT]: passed disparity (%.3f < %.3f, %d features)\n" RESET, average_disparity, _zupt_max_disparity, (int)num_features);
     } else {
-      printf(YELLOW "[ZUPT]: failed disparity (%.3f > %.3f, %d features)\n" RESET, average_disparity, _zupt_max_disparity,
-             (int)num_features);
+      //printf(YELLOW "[ZUPT]: failed disparity (%.3f > %.3f, %d features)\n" RESET, average_disparity, _zupt_max_disparity,
+      //       (int)num_features);
     }
   }
 
@@ -213,8 +213,8 @@ bool UpdaterZeroVelocity::try_update(std::shared_ptr<State> state, double timest
   // We need to pass the chi2 and not be above our velocity threshold
   if (!disparity_passed && (chi2 > _options.chi2_multipler * chi2_check || state->_imu->vel().norm() > _zupt_max_velocity)) {
     last_zupt_state_timestamp = 0.0;
-    printf(YELLOW "[ZUPT]: rejected |v_IinG| = %.3f (chi2 %.3f > %.3f)\n" RESET, state->_imu->vel().norm(), chi2,
-           _options.chi2_multipler * chi2_check);
+    //printf(YELLOW "[ZUPT]: rejected |v_IinG| = %.3f (chi2 %.3f > %.3f)\n" RESET, state->_imu->vel().norm(), chi2,
+    //       _options.chi2_multipler * chi2_check);
     return false;
   }
   printf(CYAN "[ZUPT]: accepted |v_IinG| = %.3f (chi2 %.3f < %.3f)\n" RESET, state->_imu->vel().norm(), chi2,

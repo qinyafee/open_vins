@@ -24,6 +24,8 @@
 
 #include "types/Landmark.h"
 #include <memory>
+#define ENABLE_LOG 0
+#define USE_VINS_INIT 1
 
 using namespace ov_core;
 using namespace ov_type;
@@ -146,9 +148,15 @@ void VioManager::feed_measurement_imu(const ov_core::ImuData &message) {
   propagator->feed_imu(message);
 
   // Push back to our initializer
+#if! USE_VINS_INIT
   if (!is_initialized_vio) {
-    initializer->feed_imu(message);
+	  initializer->feed_imu(message);
   }
+#else
+   if(vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL) {
+        vins_estimator.inputIMU(message.timestamp, message.am, message.wm);
+  }
+#endif
 
   // Push back to the zero velocity updater if we have it
   if (updaterZUPT != nullptr) {
@@ -261,6 +269,10 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
 
   // Assert we have valid measurement data and ids
   int num_images = (int)message_const.sensor_ids.size();
+#if USE_VINS_INIT
+    if(num_images == 1 && vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL)
+        return;
+#endif
   assert(!message_const.sensor_ids.empty());
   assert(message_const.sensor_ids.size() == message_const.images.size());
   for (size_t i = 0; i < message_const.sensor_ids.size() - 1; i++) {
@@ -288,8 +300,42 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
     trackFEATS->feed_monocular(message.timestamp, message.images.at(0), message.sensor_ids.at(0));
   } else if (num_images == 2) {
     if (params.use_stereo) {
-      trackFEATS->feed_stereo(message.timestamp, message.images.at(0), message.images.at(1), message.sensor_ids.at(0),
-                              message.sensor_ids.at(1));
+#if USE_VINS_INIT
+		if (vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL) {
+			vins_estimator.inputImage(message.timestamp,
+				message.images.at(0),
+				message.images.at(1));
+			if (vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL)
+				return;
+			else// initialize success
+			{
+				Eigen::Matrix<double, 3, 3> Ro;
+				Ro = vins_estimator.latest_Q.toRotationMatrix(); //R_I0toG;
+				Eigen::Matrix<double, 3, 3> R;
+				R = Ro.transpose();
+				Eigen::Matrix<double, 4, 1> q_GtoI = rot_2_quat(R);
+
+				//set IMU state [time(sec),q_GtoI,p_IinG,v_IinG,b_gyro,b_accel] 17 dof
+				Eigen::Matrix<double, 17, 1> imustate;
+				imustate(0, 0) = vins_estimator.latest_time;
+				imustate.block(1, 0, 4, 1) = q_GtoI;
+				imustate.block(5, 0, 3, 1) = vins_estimator.latest_P;
+				imustate.block(8, 0, 3, 1) = vins_estimator.latest_V;
+				imustate.block(11, 0, 3, 1) = vins_estimator.latest_Bg;
+				imustate.block(14, 0, 3, 1) = vins_estimator.latest_Ba;
+				// imustate.block((0, 0, 4, 1)) = vins_estimator.latest_acc_0;
+				// imustate.block((0, 0, 4, 1)) = vins_estimator.latest_gyr_0;
+				initialize_with_gt(imustate); //set is_initialized_vio=true here
+				std::cout << "vins_estimator.latest_P:" << vins_estimator.latest_P.transpose() << std::endl;
+				return;
+			}
+		}
+        else 
+#endif
+        {
+            trackFEATS->feed_stereo(message.timestamp, message.images.at(0), message.images.at(1), message.sensor_ids.at(0),
+                message.sensor_ids.at(1));
+        }
     } else {
       parallel_for_(cv::Range(0, 2), LambdaBody([&](const cv::Range &range) {
                       for (int i = range.start; i < range.end; i++) {
@@ -357,7 +403,7 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
       return;
     }
   }
-
+#if !USE_VINS_INIT
   // If we do not have VIO initialization, then try to initialize
   // TODO: Or if we are trying to reset the system, then do that here!
   if (!is_initialized_vio) {
@@ -365,7 +411,7 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
     if (!is_initialized_vio)
       return;
   }
-
+#endif
   // Call on our propagate and update function
   do_feature_propagate_update(message);
 }
@@ -673,6 +719,7 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
   double time_total = (rT7 - rT1).total_microseconds() * 1e-6;
 
   // Timing information
+#if ENABLE_LOG
   printf(BLUE "[TIME]: %.4f seconds for tracking\n" RESET, time_track);
   printf(BLUE "[TIME]: %.4f seconds for propagation\n" RESET, time_prop);
   printf(BLUE "[TIME]: %.4f seconds for MSCKF update (%d feats)\n" RESET, time_msckf, (int)featsup_MSCKF.size());
@@ -686,6 +733,7 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
     printf(BLUE " %d", id);
   }
   printf(")\n" RESET);
+#endif
 
   // Finally if we are saving stats to file, lets save it to file
   if (params.record_timing_information && of_statistics.is_open()) {
@@ -709,7 +757,7 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
     distance += dx.norm();
   }
   timelastupdate = message.timestamp;
-
+#if ENABLE_LOG
   // Debug, print our current state
   printf("q_GtoI = %.3f,%.3f,%.3f,%.3f | p_IinG = %.3f,%.3f,%.3f | dist = %.2f (meters)\n", state->_imu->quat()(0), state->_imu->quat()(1),
          state->_imu->quat()(2), state->_imu->quat()(3), state->_imu->pos()(0), state->_imu->pos()(1), state->_imu->pos()(2), distance);
@@ -738,6 +786,7 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
              calib->quat()(3), calib->pos()(0), calib->pos()(1), calib->pos()(2));
     }
   }
+#endif
 }
 
 bool VioManager::try_to_initialize() {

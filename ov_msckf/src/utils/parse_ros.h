@@ -58,6 +58,7 @@ VioManagerOptions parse_ros_nodehandler(ros::NodeHandle &nh) {
   nh.param<int>("max_cameras", params.state_options.num_cameras, params.state_options.num_cameras);
   nh.param<double>("dt_slam_delay", params.dt_slam_delay, params.dt_slam_delay);
 
+  nh.param<std::string>("path_vins_config", params.path_vins_config, params.path_vins_config);
   // Enforce that we have enough cameras to run
   if (params.state_options.num_cameras < 1) {
     printf(RED "VioManager(): Specified number of cameras needs to be greater than zero\n" RESET);

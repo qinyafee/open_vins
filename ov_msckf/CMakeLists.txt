@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.8.8)
-
+# cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 3.1)
 # Project name
 project(ov_msckf)
 
@@ -7,15 +7,27 @@ project(ov_msckf)
 #set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/)
 
 # Find catkin (the ROS build system)
-find_package(catkin QUIET COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge ov_core)
+find_package(catkin QUIET COMPONENTS 
+    roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge 
+    ov_core
+    # vins_lib
+    )
+set(catkin_FOUND 0)
 
 # Include libraries (if we don't have opencv 4, then fallback to opencv 3)
 find_package(Eigen3 REQUIRED)
-find_package(OpenCV 4 QUIET)
-if (NOT OpenCV_FOUND)
-    find_package(OpenCV 3 REQUIRED)
-endif()
+find_package(OpenCV 3 QUIET)
+# find_package(OpenCV 4 QUIET)
+# if (NOT OpenCV_FOUND)
+#     find_package(OpenCV 3 REQUIRED)
+# endif()
 find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time)
+
+find_package(Pangolin REQUIRED)
+
+include_directories(
+${Pangolin_INCLUDE_DIRS}
+)
 
 # display message to user
 #message(WARNING "EIGEN VERSION: " ${EIGEN3_VERSION})
@@ -23,6 +35,8 @@ message(WARNING "OPENCV VERSION: " ${OpenCV_VERSION})
 message(WARNING "BOOST VERSION: " ${Boost_VERSION})
 
 # Describe catkin project
+message("catkin_FOUND" ${catkin_FOUND})
+
 if (catkin_FOUND)
     add_definitions(-DROS_AVAILABLE=1)
     catkin_package(
@@ -47,11 +61,13 @@ else()
     message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
+if (UNIX)
 # Enable compile optimizations
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops")
 
 # Enable debug flags (use if you want to debug in gdb)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized -Wmaybe-uninitialized -fno-omit-frame-pointer")
+endif()
 
 # Include our header files
 include_directories(
@@ -90,14 +106,15 @@ list(APPEND library_source_files
         src/update/UpdaterMSCKF.cpp
         src/update/UpdaterSLAM.cpp
         src/update/UpdaterZeroVelocity.cpp
+        src/Interface.cc
 )
 if (catkin_FOUND)
     list(APPEND library_source_files
         src/core/RosVisualizer.cpp
     )
 endif()
-add_library(ov_msckf_lib SHARED ${library_source_files})
-target_link_libraries(ov_msckf_lib ${thirdparty_libraries})
+add_library(ov_msckf_lib STATIC ${library_source_files})
+target_link_libraries(ov_msckf_lib ${thirdparty_libraries} vins_lib)
 target_include_directories(ov_msckf_lib PUBLIC src)
 
 
@@ -111,24 +128,26 @@ if (catkin_FOUND)
     add_executable(run_serial_msckf src/ros_serial_msckf.cpp)
     target_link_libraries(run_serial_msckf ov_msckf_lib ${thirdparty_libraries})
 
-    add_executable(run_subscribe_msckf src/ros_subscribe_msckf.cpp)
-    target_link_libraries(run_subscribe_msckf ov_msckf_lib ${thirdparty_libraries})
+    # add_executable(run_subscribe_msckf src/ros_subscribe_msckf.cpp)
+    # target_link_libraries(run_subscribe_msckf ov_msckf_lib ${thirdparty_libraries})
 
-    add_executable(run_simulation src/run_simulation.cpp)
-    target_link_libraries(run_simulation ov_msckf_lib ${thirdparty_libraries})
+    # add_executable(run_simulation src/run_simulation.cpp)
+    # target_link_libraries(run_simulation ov_msckf_lib ${thirdparty_libraries})
 
 else()
 
-    add_executable(run_simulation src/run_simulation.cpp)
-    target_link_libraries(run_simulation ov_msckf_lib ${thirdparty_libraries})
+    # add_executable(run_simulation src/run_simulation.cpp)
+    # target_link_libraries(run_simulation ov_msckf_lib ${thirdparty_libraries})
 
 endif()
 
 
-add_executable(test_sim_meas src/test_sim_meas.cpp)
-target_link_libraries(test_sim_meas ov_msckf_lib ${thirdparty_libraries})
+# add_executable(test_sim_meas src/test_sim_meas.cpp)
+# target_link_libraries(test_sim_meas ov_msckf_lib ${thirdparty_libraries})
 
-add_executable(test_sim_repeat src/test_sim_repeat.cpp)
-target_link_libraries(test_sim_repeat ov_msckf_lib ${thirdparty_libraries})
+# add_executable(test_sim_repeat src/test_sim_repeat.cpp)
+# target_link_libraries(test_sim_repeat ov_msckf_lib ${thirdparty_libraries})
 
+add_executable(test_ov_main src/test_ov_main.cpp src/Interface.cc)
+target_link_libraries(test_ov_main ov_msckf_lib ${thirdparty_libraries} ${Pangolin_LIBRARIES})
 
