@@ -50,10 +50,16 @@ feat_rep_slam : "ANCHORED_FULL_INVERSE_DEPTH"
 # Tracking flags
 use_stereo: 1
 use_aruco : 0
+
+# # tracker/extractor parameters
+# use_klt      : 0
+# # if not use klt, then use descriptor, must set knn ratio
+# knn_ratio    : 0.85
+# # Minimum points matches for ransac
+# min_matches : 10 #  20 big error; 25 fail to intial
+
 # tracker/extractor parameters 
 use_klt      : 1
-# if not use klt, then use descriptor, must set knn ratio
-knn_ratio    : 0.85
 # Minimum points matches for ransac
 min_matches : 10
 
@@ -64,9 +70,16 @@ min_px_dist  : 10
 num_pts      : 100
 
 # downsize_aruco: 0
-# downsample_cameras: 0
+downsample_cameras: 1
+
+## the follow flags, only one can set true
 # # multi-threading for stereo matching
-multi_threading : 1
+multi_threading : 0
+# using openCL
+use_ocl: 0
+# using cuda
+use_cuda: 1
+
 
 #imu parameters(continuous)      The more accurate parameters you provide, the better performance
 gyroscope_noise_density    : 2.0783740699543856e-02
@@ -119,8 +132,8 @@ cam0_is_fisheye: 1
 cam1_is_fisheye: 1
 
 
-# image_width: 480
-# image_height: 640
+image_width: 480
+image_height: 640
 
 
 cam0_k: !!opencv-matrix

@@ -479,9 +479,27 @@ void TrackKLT::perform_detection_stereo(const std::vector<cv::Mat> &img0pyr, con
       // Note: but this might cause failure in cases of repeated textures (eg. checkerboard)
       std::vector<uchar> mask;
       std::vector<float> error;
-      cv::TermCriteria term_crit = cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 10, 0.01);
-      cv::calcOpticalFlowPyrLK(img0pyr, img1pyr, pts0_new, pts1_new, mask, error, win_size, pyr_levels, term_crit,
-                               cv::OPTFLOW_USE_INITIAL_FLOW);
+      // cv::TermCriteria term_crit = cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 10, 0.01);
+      // cv::calcOpticalFlowPyrLK(img0pyr, img1pyr, pts0_new, pts1_new, mask, error, win_size, pyr_levels, term_crit,
+      //                          cv::OPTFLOW_USE_INITIAL_FLOW);
+
+            cv::cuda::GpuMat prev_gpu_img(img0pyr.at(0));
+            cv::cuda::GpuMat cur_gpu_img(img1pyr.at(0));
+            cv::cuda::GpuMat prev_gpu_pts(pts0_new);
+            cv::cuda::GpuMat cur_gpu_pts(pts1_new);
+            cv::cuda::GpuMat gpu_status;
+            // cur_gpu_pts = cv::cuda::GpuMat(pts1_new);
+            cv::Ptr<cv::cuda::SparsePyrLKOpticalFlow> d_pyrLK_sparse = cv::cuda::SparsePyrLKOpticalFlow::create(
+            cv::Size(21, 21), 1, 30, true);
+            d_pyrLK_sparse->calc(prev_gpu_img, cur_gpu_img, prev_gpu_pts, cur_gpu_pts, gpu_status);
+            
+            std::vector<cv::Point2f> tmp_cur_pts(cur_gpu_pts.cols);
+            cur_gpu_pts.download(tmp_cur_pts);
+            pts1_new = tmp_cur_pts;
+
+            std::vector<uchar> tmp_status(gpu_status.cols);
+            gpu_status.download(tmp_status);
+            mask = std::move(tmp_status);
 
       // Loop through and record only ones that are valid
       for (size_t i = 0; i < pts0_new.size(); i++) {
