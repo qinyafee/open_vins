@@ -168,7 +168,7 @@ void VioManager::feed_measurement_imu(const ov_core::ImuData &message) {
   for (const auto &cam_msg : camera_queue) {
     if (std::find(unique_cam_ids.begin(), unique_cam_ids.end(), cam_msg.sensor_ids.at(0)) != unique_cam_ids.end())
       continue;
-    unique_cam_ids.push_back(cam_msg.sensor_ids.at(0));
+    unique_cam_ids.push_back(cam_msg.sensor_ids.at(0)); // if stereo, only store left
   }
 
   // If we do not have enough unique cameras then we need to wait
@@ -286,6 +286,12 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
     cv::Mat img_temp;
     cv::pyrDown(img, img_temp, cv::Size(img.cols / 2.0, img.rows / 2.0));
     message.images.at(i) = img_temp;
+
+// #if HAVE_CUDA
+// 	cv::cuda::GpuMat gpu_img_tmp;
+// 	cv::cuda::pyrDown(message.gpu_imgs.at(i), gpu_img_tmp);
+// 	message.gpu_imgs.at(i) = gpu_img_tmp;
+// #endif
   }
 
   // Record our latest image for displaying out zero velocity update
@@ -297,49 +303,62 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
   //  1) single cameras we are monocular
   //  2) two cameras we are stereo
   if (num_images == 1) {
+#if HAVE_CUDA
+    trackFEATS->feed_monocular_cuda(message.timestamp, message.images.at(0), message.sensor_ids.at(0));
+#else
     trackFEATS->feed_monocular(message.timestamp, message.images.at(0), message.sensor_ids.at(0));
+#endif
   } else if (num_images == 2) {
     if (params.use_stereo) {
 #if USE_VINS_INIT
-		if (vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL) {
-			vins_estimator.inputImage(message.timestamp,
-				message.images.at(0),
-				message.images.at(1));
-			if (vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL)
-				return;
-			else// initialize success
-			{
-				Eigen::Matrix<double, 3, 3> Ro;
-				Ro = vins_estimator.latest_Q.toRotationMatrix(); //R_I0toG;
-				Eigen::Matrix<double, 3, 3> R;
-				R = Ro.transpose();
-				Eigen::Matrix<double, 4, 1> q_GtoI = rot_2_quat(R);
-
-				//set IMU state [time(sec),q_GtoI,p_IinG,v_IinG,b_gyro,b_accel] 17 dof
-				Eigen::Matrix<double, 17, 1> imustate;
-				imustate(0, 0) = vins_estimator.latest_time;
-				imustate.block(1, 0, 4, 1) = q_GtoI;
-				imustate.block(5, 0, 3, 1) = vins_estimator.latest_P;
-				imustate.block(8, 0, 3, 1) = vins_estimator.latest_V;
-				imustate.block(11, 0, 3, 1) = vins_estimator.latest_Bg;
-				imustate.block(14, 0, 3, 1) = vins_estimator.latest_Ba;
-				// imustate.block((0, 0, 4, 1)) = vins_estimator.latest_acc_0;
-				// imustate.block((0, 0, 4, 1)) = vins_estimator.latest_gyr_0;
-				initialize_with_gt(imustate); //set is_initialized_vio=true here
-				std::cout << "vins_estimator.latest_P:" << vins_estimator.latest_P.transpose() << std::endl;
-				return;
-			}
-		}
-        else 
-#endif
+      if (vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL) {
+        vins_estimator.inputImage(message.timestamp,
+          message.images.at(0),
+          message.images.at(1));
+        if (vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL)
+          return;
+        else// initialize success
         {
-            trackFEATS->feed_stereo(message.timestamp, message.images.at(0), message.images.at(1), message.sensor_ids.at(0),
-                message.sensor_ids.at(1));
+          Eigen::Matrix<double, 3, 3> Ro;
+          Ro = vins_estimator.latest_Q.toRotationMatrix(); //R_I0toG;
+          Eigen::Matrix<double, 3, 3> R;
+          R = Ro.transpose();
+          Eigen::Matrix<double, 4, 1> q_GtoI = rot_2_quat(R);
+
+          //set IMU state [time(sec),q_GtoI,p_IinG,v_IinG,b_gyro,b_accel] 17 dof
+          Eigen::Matrix<double, 17, 1> imustate;
+          imustate(0, 0) = vins_estimator.latest_time;
+          imustate.block(1, 0, 4, 1) = q_GtoI;
+          imustate.block(5, 0, 3, 1) = vins_estimator.latest_P;
+          imustate.block(8, 0, 3, 1) = vins_estimator.latest_V;
+          imustate.block(11, 0, 3, 1) = vins_estimator.latest_Bg;
+          imustate.block(14, 0, 3, 1) = vins_estimator.latest_Ba;
+          // imustate.block((0, 0, 4, 1)) = vins_estimator.latest_acc_0;
+          // imustate.block((0, 0, 4, 1)) = vins_estimator.latest_gyr_0;
+          initialize_with_gt(imustate); //set is_initialized_vio=true here
+          std::cout << "vins_estimator.latest_P:" << vins_estimator.latest_P.transpose() << std::endl;
+          return;
         }
+      } 
+      else
+#endif
+      {
+#if HAVE_CUDA
+        trackFEATS->feed_stereo_cuda(message.timestamp, message.images.at(0), message.images.at(1), message.sensor_ids.at(0),
+            message.sensor_ids.at(1));
+#else
+        trackFEATS->feed_stereo(message.timestamp, message.images.at(0), message.images.at(1), message.sensor_ids.at(0),
+            message.sensor_ids.at(1));
+#endif
+      }
     } else {
       parallel_for_(cv::Range(0, 2), LambdaBody([&](const cv::Range &range) {
                       for (int i = range.start; i < range.end; i++) {
+#if HAVE_CUDA
+    					          trackFEATS->feed_monocular_cuda(message.timestamp, message.images.at(i), message.sensor_ids.at(i));
+#else
                         trackFEATS->feed_monocular(message.timestamp, message.images.at(i), message.sensor_ids.at(i));
+#endif
                       }
                     }));
     }

@@ -32,6 +32,10 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
+#include <opencv2/cudaoptflow.hpp>
+#include <opencv2/cudaimgproc.hpp>
+#include <opencv2/cudaarithm.hpp>
+
 #include "utils/lambda_body.h"
 
 namespace ov_core {
@@ -141,13 +145,84 @@ public:
     }
 
     // Finally get sub-pixel for all extracted features
-    cv::cornerSubPix(img, pts_refined, win_size, zero_zone, term_crit);
+    cv::cornerSubPix(img, pts_refined, win_size, zero_zone, term_crit); //no cuda
 
     // Save the refined points!
     for (size_t i = 0; i < pts.size(); i++) {
       pts.at(i).pt = pts_refined.at(i);
     }
   }
+
+#if HAVE_CUDA
+  static void perform_griding(const cv::Mat &img, const cv::cuda::GpuMat &gpu_img, std::vector<cv::KeyPoint> &pts, int num_features, int grid_x, int grid_y, int threshold,
+                              bool nonmaxSuppression) {
+
+    // Calculate the size our extraction boxes should be
+    int size_x = img.cols / grid_x;// 640/5 =128
+    int size_y = img.rows / grid_y;// 480/5 =96
+
+    // Make sure our sizes are not zero
+    assert(size_x > 0);
+    assert(size_y > 0);
+
+    // We want to have equally distributed features
+    auto num_features_grid = (int)(num_features / (grid_x * grid_y)) + 1; //=100/25+1=5
+
+    // Parallelize our 2d grid extraction!!
+    int ct_cols = std::floor(img.cols / size_x);//=5
+    int ct_rows = std::floor(img.rows / size_y);//=5
+    std::vector<std::vector<cv::KeyPoint>> collection(ct_cols * ct_rows);//=25
+
+    std::vector<cv::KeyPoint> pts_new;
+    cv::Ptr<cv::cuda::FastFeatureDetector> gpuFastDetector = cv::cuda::FastFeatureDetector::create(threshold, nonmaxSuppression);
+    gpuFastDetector->detect(gpu_img, pts_new);
+
+    // assign features to grids
+    for(int i = 0; i < pts_new.size(); ++i){
+      int c = pts_new[i].pt.x / size_x;
+      int r = pts_new[i].pt.y / size_y;
+      // x direction major
+      int index = r*ct_cols + c;
+      collection[index].push_back(pts_new[i]);
+    }
+
+    // select the best features from all
+    for(int i = 0; i < collection.size(); ++i){
+      if(collection[i].size() >num_features_grid){
+        std::sort(collection[i].begin(), collection[i].end(), Grider_FAST::compare_response);
+        collection[i].erase(collection[i].begin()+5, collection[i].end());
+      }
+    }
+
+    // Combine all the collections into our single vector
+    for (size_t r = 0; r < collection.size(); r++) {
+      pts.insert(pts.end(), collection.at(r).begin(), collection.at(r).end());
+    }
+
+    // Return if no points
+    if (pts.empty())
+      return;
+
+    // Sub-pixel refinement parameters
+    cv::Size win_size = cv::Size(5, 5);
+    cv::Size zero_zone = cv::Size(-1, -1);
+    cv::TermCriteria term_crit = cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 20, 0.001);
+
+    // Get vector of points
+    std::vector<cv::Point2f> pts_refined;
+    for (size_t i = 0; i < pts.size(); i++) {
+      pts_refined.push_back(pts.at(i).pt);
+    }
+
+    // Finally get sub-pixel for all extracted features
+    cv::cornerSubPix(img, pts_refined, win_size, zero_zone, term_crit); //no cuda
+
+    // Save the refined points!
+    for (size_t i = 0; i < pts.size(); i++) {
+      pts.at(i).pt = pts_refined.at(i);
+    }
+  }
+#endif
 };
 
 } // namespace ov_core

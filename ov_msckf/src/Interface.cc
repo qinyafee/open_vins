@@ -83,23 +83,29 @@ void FeedImagesData(const ImagesInputData &data, const size_t num_cam)
         
         message.sensor_ids.push_back(2);
         message.images.push_back(data.imgs[0]);
+        // message.gpu_imgs.emplace_back(data.imgs[0]);
         sys->feed_measurement_camera(message);
 
         message.sensor_ids[0] = 3;
         message.images[0] = data.imgs[1];
+        // message.gpu_imgs.emplace_back(data.imgs[1]);
         sys->feed_measurement_camera(message);
 
         message.sensor_ids[0] = 4;
         message.images[0] = data.imgs[4];
+        // message.gpu_imgs.emplace_back(data.imgs[4]);
         sys->feed_measurement_camera(message);
     }
     message.sensor_ids.clear();
     message.images.clear();
+    // message.gpu_imgs.clear();
 
     message.sensor_ids.push_back(0);
     message.sensor_ids.push_back(1);
     message.images.push_back(left);
+    // message.gpu_imgs.emplace_back(left);
     message.images.push_back(right);
+    // message.gpu_imgs.emplace_back(left);
     sys->feed_measurement_camera(message);//only add to queue
 
     

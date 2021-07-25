@@ -2,6 +2,14 @@
 cmake_minimum_required(VERSION 3.1)
 project(ov_dyn)
 
+
+# config whether use cuda support
+option (USE_CUDA "use cuda support" OFF)
+if (USE_CUDA)
+    add_definitions(-DHAVE_CUDA)
+    message(STATUS "defined HAVE_CUDA")
+endif()
+
 add_subdirectory(camera_models)
 add_subdirectory(vins_estimator)
 

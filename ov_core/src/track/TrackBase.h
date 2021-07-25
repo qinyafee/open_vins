@@ -209,6 +209,12 @@ public:
    */
   virtual void feed_monocular(double timestamp, cv::Mat &img, size_t cam_id) = 0;
 
+#if HAVE_CUDA
+  virtual void feed_monocular_cuda(double timestamp, cv::Mat &img, size_t cam_id){}
+
+  virtual void feed_stereo_cuda(double timestamp, cv::Mat &img_leftin, cv::Mat &img_rightin, size_t cam_id_left, size_t cam_id_right){}
+#endif
+
   /**
    * @brief Process new stereo pair of images
    * @param timestamp timestamp this pair occured at (stereo is synchronised)

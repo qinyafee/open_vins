@@ -75,6 +75,11 @@ public:
    */
   void feed_stereo(double timestamp, cv::Mat &img_left, cv::Mat &img_right, size_t cam_id_left, size_t cam_id_right) override;
 
+#if HAVE_CUDA
+  void feed_monocular_cuda(double timestamp, cv::Mat &img, size_t cam_id);
+  void feed_stereo_cuda(double timestamp, cv::Mat &img_leftin, cv::Mat &img_rightin, size_t cam_id_left, size_t cam_id_right);
+#endif
+
 protected:
   /**
    * @brief Detects new features in the current image
@@ -122,6 +127,13 @@ protected:
   void perform_matching(const std::vector<cv::Mat> &img0pyr, const std::vector<cv::Mat> &img1pyr, std::vector<cv::KeyPoint> &pts0,
                         std::vector<cv::KeyPoint> &pts1, size_t id0, size_t id1, std::vector<uchar> &mask_out);
 
+#if HAVE_CUDA
+  void perform_detection_monocular(const cv::Mat &img0, const cv::cuda::GpuMat &gpu_img0, std::vector<cv::KeyPoint> &pts0, std::vector<size_t> &ids0);
+  void perform_detection_stereo(const cv::Mat &img0, const cv::Mat &img1, const cv::cuda::GpuMat &gpu_img0, const cv::cuda::GpuMat &gpu_img1, std::vector<cv::KeyPoint> &pts0,
+                                std::vector<cv::KeyPoint> &pts1, std::vector<size_t> &ids0, std::vector<size_t> &ids1);
+  void perform_matching(const cv::cuda::GpuMat &gpu_img0, const cv::cuda::GpuMat &gpu_img1, std::vector<cv::KeyPoint> &pts0,
+                        std::vector<cv::KeyPoint> &pts1, size_t id0, size_t id1, std::vector<uchar> &mask_out);
+#endif
   // Timing variables
   boost::posix_time::ptime rT1, rT2, rT3, rT4, rT5, rT6, rT7;
 
@@ -133,8 +145,9 @@ protected:
   // Minimum pixel distance to be "far away enough" to be a different extracted feature
   int min_px_dist;
 
-        // Minimum points matches for ransac
-        int min_matches = 10;
+  // Minimum points matches for ransac
+  int min_matches = 10;
+
   // How many pyramid levels to track on and the window size to reduce by
   int pyr_levels = 3;
   cv::Size win_size = cv::Size(15, 15);
@@ -145,6 +158,10 @@ protected:
 
   // Last set of image pyramids
   std::map<size_t, std::vector<cv::Mat>> img_pyramid_last;
+
+#if HAVE_CUDA
+  std::map<size_t, cv::cuda::GpuMat> gpu_img_last;
+#endif
 };
 
 } // namespace ov_core

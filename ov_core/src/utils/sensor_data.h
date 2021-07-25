@@ -64,6 +64,11 @@ struct CameraData {
   /// Camera ids for each of the images collected
   std::vector<cv::Mat> images;
 
+// #if HAVE_CUDA
+// /// GpuMat images collected
+//   std::vector<cv::cuda::GpuMat> gpu_imgs;
+// #endif
+
   /// Sort function to allow for using of STL containers
   bool operator<(const CameraData &other) const {
     if (timestamp == other.timestamp) {
