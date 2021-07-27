@@ -32,9 +32,11 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
+#if HAVE_CUDA
 #include <opencv2/cudaoptflow.hpp>
 #include <opencv2/cudaimgproc.hpp>
 #include <opencv2/cudaarithm.hpp>
+#endif
 
 #include "utils/lambda_body.h"
 
@@ -190,7 +192,7 @@ public:
     for(int i = 0; i < collection.size(); ++i){
       if(collection[i].size() >num_features_grid){
         std::sort(collection[i].begin(), collection[i].end(), Grider_FAST::compare_response);
-        collection[i].erase(collection[i].begin()+5, collection[i].end());
+        collection[i].erase(collection[i].begin()+num_features_grid, collection[i].end());
       }
     }
 
