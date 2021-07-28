@@ -130,7 +130,9 @@ fi_max_cond_number : 10000
 
 cam0_is_fisheye: 1
 cam1_is_fisheye: 1
-
+cam2_is_fisheye: 1
+cam3_is_fisheye: 1
+cam4_is_fisheye: 1
 
 image_width: 480
 image_height: 640

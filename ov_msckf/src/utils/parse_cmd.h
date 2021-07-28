@@ -150,10 +150,10 @@ VioManagerOptions parse_ov(std::string config_file) {
     params.downsample_cameras = downsample_cameras;
     int multi_threading = fsSettings["multi_threading"];
     params.use_multi_threading = multi_threading;
-    // int use_ocl = fsSettings["use_ocl"];
-    // params.use_ocl = use_ocl;
-    // int use_cuda = fsSettings["use_cuda"];
-    // params.use_cuda = use_cuda;
+    int use_ocl = fsSettings["use_ocl"];
+    params.use_ocl = use_ocl;
+    int use_cuda = fsSettings["use_cuda"];
+    params.use_cuda = use_cuda;
 
     // General parameters
     params.num_pts = fsSettings["num_pts"];

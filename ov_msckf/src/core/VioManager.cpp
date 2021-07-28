@@ -304,9 +304,11 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
   //  2) two cameras we are stereo
   if (num_images == 1) {
 #if HAVE_CUDA
-    trackFEATS->feed_monocular_cuda(message.timestamp, message.images.at(0), message.sensor_ids.at(0));
+    if(params.use_cuda)
+      trackFEATS->feed_monocular_cuda(message.timestamp, message.images.at(0), message.sensor_ids.at(0));
+    else
 #else
-    trackFEATS->feed_monocular(message.timestamp, message.images.at(0), message.sensor_ids.at(0));
+      trackFEATS->feed_monocular(message.timestamp, message.images.at(0), message.sensor_ids.at(0));
 #endif
   } else if (num_images == 2) {
     if (params.use_stereo) {
@@ -344,20 +346,24 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
 #endif
       {
 #if HAVE_CUDA
-        trackFEATS->feed_stereo_cuda(message.timestamp, message.images.at(0), message.images.at(1), message.sensor_ids.at(0),
-            message.sensor_ids.at(1));
+        if(params.use_cuda)
+          trackFEATS->feed_stereo_cuda(message.timestamp, message.images.at(0), message.images.at(1), message.sensor_ids.at(0),
+              message.sensor_ids.at(1));
+        else
 #else
-        trackFEATS->feed_stereo(message.timestamp, message.images.at(0), message.images.at(1), message.sensor_ids.at(0),
-            message.sensor_ids.at(1));
+          trackFEATS->feed_stereo(message.timestamp, message.images.at(0), message.images.at(1), message.sensor_ids.at(0),
+              message.sensor_ids.at(1));
 #endif
       }
     } else {
       parallel_for_(cv::Range(0, 2), LambdaBody([&](const cv::Range &range) {
                       for (int i = range.start; i < range.end; i++) {
 #if HAVE_CUDA
-    					          trackFEATS->feed_monocular_cuda(message.timestamp, message.images.at(i), message.sensor_ids.at(i));
+                        if(params.use_cuda)
+    					            trackFEATS->feed_monocular_cuda(message.timestamp, message.images.at(i), message.sensor_ids.at(i));
+                        else
 #else
-                        trackFEATS->feed_monocular(message.timestamp, message.images.at(i), message.sensor_ids.at(i));
+                          trackFEATS->feed_monocular(message.timestamp, message.images.at(i), message.sensor_ids.at(i));
 #endif
                       }
                     }));

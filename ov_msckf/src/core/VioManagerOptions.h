@@ -203,6 +203,8 @@ struct VioManagerOptions {
 
   /// If our front-end should try to use some multi-threading for stereo matching
   bool use_multi_threading = true;
+  bool use_cuda = true;
+  bool use_ocl = false;
 
   /// The number of points we should extract and track in *each* image frame. This highly effects the computation required for tracking.
   int num_pts = 150;
