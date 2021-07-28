@@ -4,7 +4,7 @@ project(ov_dyn)
 
 
 # config whether use cuda support
-option (USE_CUDA "use cuda support" OFF)
+option (USE_CUDA "use cuda support" ON)
 if (USE_CUDA)
     add_definitions(-DHAVE_CUDA)
     message(STATUS "defined HAVE_CUDA")

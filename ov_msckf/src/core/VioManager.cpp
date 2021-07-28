@@ -303,13 +303,13 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
   //  1) single cameras we are monocular
   //  2) two cameras we are stereo
   if (num_images == 1) {
-#if HAVE_CUDA
+// #if HAVE_CUDA
     if(params.use_cuda)
       trackFEATS->feed_monocular_cuda(message.timestamp, message.images.at(0), message.sensor_ids.at(0));
     else
-#else
+// #else
       trackFEATS->feed_monocular(message.timestamp, message.images.at(0), message.sensor_ids.at(0));
-#endif
+// #endif
   } else if (num_images == 2) {
     if (params.use_stereo) {
 #if USE_VINS_INIT
@@ -345,26 +345,26 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
       else
 #endif
       {
-#if HAVE_CUDA
+// #if HAVE_CUDA
         if(params.use_cuda)
           trackFEATS->feed_stereo_cuda(message.timestamp, message.images.at(0), message.images.at(1), message.sensor_ids.at(0),
               message.sensor_ids.at(1));
         else
-#else
+// #else
           trackFEATS->feed_stereo(message.timestamp, message.images.at(0), message.images.at(1), message.sensor_ids.at(0),
               message.sensor_ids.at(1));
-#endif
+// #endif
       }
     } else {
       parallel_for_(cv::Range(0, 2), LambdaBody([&](const cv::Range &range) {
                       for (int i = range.start; i < range.end; i++) {
-#if HAVE_CUDA
+// #if HAVE_CUDA
                         if(params.use_cuda)
     					            trackFEATS->feed_monocular_cuda(message.timestamp, message.images.at(i), message.sensor_ids.at(i));
                         else
-#else
+// #else
                           trackFEATS->feed_monocular(message.timestamp, message.images.at(i), message.sensor_ids.at(i));
-#endif
+// #endif
                       }
                     }));
     }
