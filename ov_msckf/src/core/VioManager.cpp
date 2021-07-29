@@ -81,16 +81,17 @@ VioManager::VioManager(VioManagerOptions &params_) {
 
   // If we are recording statistics, then open our file
   if (params.record_timing_information) {
-    // If the file exists, then delete it
-    if (boost::filesystem::exists(params.record_timing_filepath)) {
-      boost::filesystem::remove(params.record_timing_filepath);
-      printf(YELLOW "[STATS]: found old file found, deleted...\n" RESET);
-    }
-    // Create the directory that we will open the file in
-    boost::filesystem::path p(params.record_timing_filepath);
-    boost::filesystem::create_directories(p.parent_path());
+    //TODO, optimize here
+    // // If the file exists, then delete it
+    // if (boost::filesystem::exists(params.record_timing_filepath)) {
+    //   boost::filesystem::remove(params.record_timing_filepath);
+    //   printf(YELLOW "[STATS]: found old file found, deleted...\n" RESET);
+    // }
+    // // Create the directory that we will open the file in
+    // boost::filesystem::path p(params.record_timing_filepath);
+    // boost::filesystem::create_directories(p.parent_path());
     // Open our statistics file!
-    of_statistics.open(params.record_timing_filepath, std::ofstream::out | std::ofstream::app);
+    of_statistics.open(params.record_timing_filepath, std::ofstream::out | std::ofstream::trunc);
     // Write the header information into it
     of_statistics << "# timestamp (sec),tracking,propagation,msckf update,";
     if (state->_options.max_slam_features > 0) {

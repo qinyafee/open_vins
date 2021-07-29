@@ -11,7 +11,7 @@ mkdir build && cd build
 cmake -DUSE_CUDA=ON ..
 make
 
-./ov_msckf/test_ov_main ~/2Others/open_vins_dyn/config/Pimax/20210318_ov.yaml ~/open_vins_dyn/config/Pimax/20210318_vf.yaml /home/qyf/0Data/20210318
+./ov_msckf/test_ov_main ~/2Others/open_vins_dyn/config/Pimax/20210318_ov.yaml ~/2Others/open_vins_dyn/config/Pimax/20210318_vf.yaml ~/0Data/20210318
 
 ./ov_msckf/test_ov_main ~/1Code/open_vins_dyn/config/Pimax/20210318_ov.yaml ~/1Code/open_vins_dyn/config/Pimax/20210318_vf.yaml ~/0Data/pimax/20210318
 

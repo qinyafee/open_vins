@@ -64,6 +64,11 @@ VioManagerOptions parse_ov(std::string config_file) {
     params.state_options.max_aruco_features = fsSettings["max_aruco_features"];
     params.state_options.num_cameras = fsSettings["max_cameras"];
     params.dt_slam_delay = fsSettings["dt_slam_delay"];
+
+    int record_timing_information = fsSettings["record_timing_information"];
+    params.record_timing_information = record_timing_information;
+    fsSettings["record_timing_filepath"] >> params.record_timing_filepath;
+
     fsSettings["path_vins_config"] >> params.path_vins_config;
 
     // Stereo pairs
