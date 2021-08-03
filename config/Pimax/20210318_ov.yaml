@@ -35,7 +35,7 @@ path_time: "/tmp/traj_timing.txt"
 
 # saving time cost
 record_timing_information: 1
-record_timing_filepath: "ov_msckf_timing.txt"
+record_timing_filepath: "ov_msckf_timing.csv"
 
 stereo_pairs: [0,1]
 

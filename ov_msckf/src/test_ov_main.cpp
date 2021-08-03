@@ -99,8 +99,8 @@ void viewResult(const std::string &config_file)
     pangolin::CreatePanel("menu").SetBounds(0.0, 1.0, 0.0, pangolin::Attach::Pix(175));
     pangolin::Var<bool> menuFollowCamera("menu.Follow Camera", false, true);
     // pangolin::Var<bool> menuShowPoints("menu.Show Points", true, true);
-    pangolin::Var<bool> menuShowFeats_msckf("menu.Show Feats_msckf", true, true);
-    pangolin::Var<bool> menuShowFeats_slam("menu.Show Feats_slam", true, true);
+    pangolin::Var<bool> menuShowFeats_msckf("menu.Show Feats_msckf", false, true);
+    pangolin::Var<bool> menuShowFeats_slam("menu.Show Feats_slam", false, true);
 
     pangolin::Var<bool> menuShowGrid("menu.Show Grid", true, true);
     pangolin::Var<bool> menuShowHistoricalTrajectory("menu.Show Trajectory", true, true);
@@ -486,8 +486,8 @@ int main(int argc, char **argv)
             data.gyro = imu_buffer[timestamp].second;
             FeedImuData(data);
             LocalizationOutputResult result;
-            // ObtainLocalizationResult(timestamp, result);
-            ObtainLocalizationResult2(result);
+            ObtainLocalizationResult3(timestamp, result);
+            // ObtainLocalizationResult2(result);
             //if(result.valid)
             {
                 std::unique_lock<std::mutex> lock(result_mtx);

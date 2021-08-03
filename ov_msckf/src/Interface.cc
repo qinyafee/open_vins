@@ -243,13 +243,22 @@ void ObtainLocalizationResult3(double ts, LocalizationOutputResult& result)
 	result.t = state_plus.block<3,1>(4,0);
 	result.R = quat_2_Rot(state_plus.block<4, 1>(0, 0));
 	result.v = state_plus.block<3, 1>(7, 0);
-	result.gyro = state_plus.block<3, 1>(10, 0);;
+	result.gyro = state_plus.block<3, 1>(10, 0);
 	// result.acc = ;
 	result.ts = ts;
 	// result.ba.setZero();
 	// result.bw.setZero();
 	result.ba = pstate->_imu->bias_a();
 	result.bw = pstate->_imu->bias_g();
+
+    // Get our good features
+    result.feats_msckf = sys->get_good_features_MSCKF();
+
+    // Get our slam features
+    result.feats_slam = sys->get_features_SLAM();
+
+    // Get our ARUCO features
+    result.feats_aruco = sys->get_features_ARUCO();
 }
 
 /*
