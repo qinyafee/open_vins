@@ -38,6 +38,7 @@ Eigen::Matrix3d Rbc0, Rbc1;
 Eigen::Vector3d tbc0, tbc1;
 
 std::map<long long, LocalizationOutputResult> result_buffer;
+std::map<long long, LocalizationOutputResult> result_buffer_imu;
 std::mutex result_mtx;
 std::map<int, Eigen::Vector3d> id_position_map;
 
@@ -105,6 +106,7 @@ void viewResult(const std::string &config_file)
     pangolin::Var<bool> menuShowGrid("menu.Show Grid", true, true);
     pangolin::Var<bool> menuShowHistoricalTrajectory("menu.Show Trajectory", true, true);
     pangolin::Var<bool> menuShowVelocityDir("menu.Show Velocity", false, true);
+    pangolin::Var<bool> menuShowImuTrajectory("menu.Show ImuTraj", true, true);
 
     pangolin::OpenGlRenderState s_cam(
             pangolin::ProjectionMatrix(1024, 768, 500.0, 500.0, 512, 389, 0.1, 1000),
@@ -163,6 +165,13 @@ void viewResult(const std::string &config_file)
                 Eigen::Matrix4d Twc0 = Twb0 * T_bc0;
                 Eigen::Vector3d twc0 = Twc0.block(0, 3, 3, 1);
 
+#if 1
+                glColor3f(1.0, 0.0, 1.0);
+                glBegin(GL_POINTS);
+                glVertex3f(twc0[0], twc0[1], twc0[2]);
+                glEnd();
+#else
+                //below is for draw lines
                 auto itt = it;
                 itt++;
                 Eigen::Matrix4d Twb1 = Eigen::Matrix4d::Identity();
@@ -177,6 +186,43 @@ void viewResult(const std::string &config_file)
                 glLineWidth(5);
                 glPointSize(10);
                 glBegin(GL_LINES);
+                Eigen::Vector3d twb1 = itt->second.t;
+                glVertex3f(twc0[0], twc0[1], twc0[2]);
+                glVertex3f(twc1[0], twc1[1], twc1[2]);
+                glEnd();
+#endif
+            }
+        }
+
+        if (menuShowImuTrajectory)
+        {
+            auto it_end = result_buffer_imu.end();
+            it_end = std::prev(it_end, 1);
+            for (auto it = result_buffer_imu.begin(); it != it_end; it++)
+            {
+                glColor3f(0.0, 1.0, 0.0);
+                Eigen::Matrix4d Twb0 = Eigen::Matrix4d::Identity();
+                Eigen::Matrix3d R_wb0 = it->second.R;
+                Eigen::Vector3d t_wb0 = it->second.t;
+                Twb0.topLeftCorner(3, 3) = R_wb0;
+                Twb0.topRightCorner(3, 1) = t_wb0;
+                Eigen::Matrix4d Twc0 = Twb0 * T_bc0;
+                Eigen::Vector3d twc0 = Twc0.block(0, 3, 3, 1);
+
+                auto itt = it;
+                itt++;
+                Eigen::Matrix4d Twb1 = Eigen::Matrix4d::Identity();
+                Eigen::Matrix3d R_wb1 = itt->second.R;
+                Eigen::Vector3d t_wb1 = itt->second.t;
+                Twb1.topLeftCorner(3, 3) = R_wb1;
+                Twb1.topRightCorner(3, 1) = t_wb1;
+                Eigen::Matrix4d Twc1 = Twb1 * T_bc0;
+                Eigen::Vector3d twc1 = Twc1.block(0, 3, 3, 1);
+
+                glColor3f(1.0, 1.0, 1.0);
+                glLineWidth(5);
+                glPointSize(10);
+                glBegin(GL_LINES);
 
                 Eigen::Vector3d twb1 = itt->second.t;
                 glVertex3f(twc0[0], twc0[1], twc0[2]);
@@ -187,8 +233,8 @@ void viewResult(const std::string &config_file)
         }
 
         Eigen::Matrix4d Twb = Eigen::Matrix4d::Identity();
-        Eigen::Matrix3d Rwb = result_buffer.rbegin()->second.R;
-        Eigen::Vector3d twb = result_buffer.rbegin()->second.t;
+        Eigen::Matrix3d Rwb = result_buffer_imu.rbegin()->second.R;
+        Eigen::Vector3d twb = result_buffer_imu.rbegin()->second.t;
         Twb.topLeftCorner(3, 3) = Rwb;
         Twb.topRightCorner(3, 1) = twb;
         Eigen::Matrix4d Twc0 = Twb * T_bc0;
@@ -493,7 +539,7 @@ int main(int argc, char **argv)
                 std::unique_lock<std::mutex> lock(result_mtx);
                 {
                     if(!resultEnd)
-                        result_buffer[timestamp] = result;
+                        result_buffer_imu[timestamp] = result;
                 }
             }
         }
@@ -513,6 +559,16 @@ int main(int argc, char **argv)
             ts_file_map[ts_] = imgs_str_buffer[timestamp][3];
 
             FeedImagesData(data, params.state_options.num_cameras);
+            LocalizationOutputResult result;
+            ObtainLocalizationResult2(result);
+            //if(result.valid)
+            {
+                std::unique_lock<std::mutex> lock(result_mtx);
+                {
+                    if(!resultEnd)
+                        result_buffer[timestamp] = result;
+                }
+            }
         }
     }
     std::cout << "association Runned Out\n";

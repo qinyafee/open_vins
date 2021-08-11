@@ -251,14 +251,14 @@ void ObtainLocalizationResult3(double ts, LocalizationOutputResult& result)
 	result.ba = pstate->_imu->bias_a();
 	result.bw = pstate->_imu->bias_g();
 
-    // Get our good features
-    result.feats_msckf = sys->get_good_features_MSCKF();
+    // // Get our good features
+    // result.feats_msckf = sys->get_good_features_MSCKF();
 
-    // Get our slam features
-    result.feats_slam = sys->get_features_SLAM();
+    // // Get our slam features
+    // result.feats_slam = sys->get_features_SLAM();
 
-    // Get our ARUCO features
-    result.feats_aruco = sys->get_features_ARUCO();
+    // // Get our ARUCO features
+    // result.feats_aruco = sys->get_features_ARUCO();
 }
 
 /*
