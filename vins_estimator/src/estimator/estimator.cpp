@@ -489,17 +489,23 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
                     frame_it->second.T = Ps[i];
                     i++;
                 }
-                solveGyroscopeBias(all_image_frame, Bgs);
-                for (int i = 0; i <= WINDOW_SIZE; i++)
-                {
-                    pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
+                // solveGyroscopeBias(all_image_frame, Bgs);
+                // for (int i = 0; i <= WINDOW_SIZE; i++)
+                // {
+                //     pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
+                // }
+                if (visualInitialAlign()){
+                    optimization();
+                    updateLatestStates();
+                    solver_flag = NON_LINEAR;
+                    slideWindow();
+                    std::cout << "Initialization finish!\n";
+                    std::cout << "p:" << Ps[WINDOW_SIZE - 1].transpose() << std::endl;
                 }
-                optimization();
-                updateLatestStates();
-                solver_flag = NON_LINEAR;
-                slideWindow();
-                std::cout << "Initialization finish!\n";
-                std::cout << "p:" << Ps[WINDOW_SIZE - 1].transpose() << std::endl;
+                else
+                {
+                    std::cout << "misalign visual structure with IMU" << std::endl;
+                }
             }
         }
 
@@ -726,7 +732,22 @@ bool Estimator::visualInitialAlign()
     TicToc t_g;
     VectorXd x;
     //solve scale
-    bool result = VisualIMUAlignment(all_image_frame, Bgs, g, x);
+
+    bool result = false;
+    if(!STEREO)
+        VisualIMUAlignment(all_image_frame, Bgs, g, x);
+    else{
+        // VisualIMUAlignmentStereo(all_image_frame, Bgs, g, x);
+        solveGyroscopeBias(all_image_frame, Bgs);
+        for (int i = 0; i <= WINDOW_SIZE; i++)
+        {
+            pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
+        }
+        if(LinearAlignmentStereo(all_image_frame, g, x))
+            result = true;
+        else 
+            result = false;
+    }
     if(!result)
     {
         std::cout << "solve g failed!" << std::endl;
@@ -742,8 +763,11 @@ bool Estimator::visualInitialAlign()
         Rs[i] = Ri;
         all_image_frame[Headers[i]].is_key_frame = true;
     }
-
-    double s = (x.tail<1>())(0);
+    double s = 1.0;
+    if(!STEREO)
+        s = (x.tail<1>())(0);
+    else
+        s = 1.0;
     for (int i = 0; i <= WINDOW_SIZE; i++)
     {
         pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
@@ -776,8 +800,10 @@ bool Estimator::visualInitialAlign()
     std::cout << "g0     " << g.transpose() << std::endl;
     std::cout << "my R0  " << Utility::R2ypr(Rs[0]).transpose() << std::endl;
 
-    f_manager.clearDepth();
-    f_manager.triangulate(frame_count, Ps, Rs, tic, ric);
+    if (!STEREO) {
+        f_manager.clearDepth();
+        f_manager.triangulate(frame_count, Ps, Rs, tic, ric);
+    }
 
     return true;
 }
