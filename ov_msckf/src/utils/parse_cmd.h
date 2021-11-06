@@ -69,6 +69,10 @@ VioManagerOptions parse_ov(std::string config_file) {
     params.record_timing_information = record_timing_information;
     fsSettings["record_timing_filepath"] >> params.record_timing_filepath;
 
+    int save_estimates = fsSettings["save_estimates"];
+    params.save_estimates = save_estimates;
+    fsSettings["save_estimates_filepath"] >> params.save_estimates_filepath;
+
     fsSettings["path_vins_config"] >> params.path_vins_config;
 
     // Stereo pairs

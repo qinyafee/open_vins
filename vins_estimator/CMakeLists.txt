@@ -2,6 +2,7 @@
 cmake_minimum_required(VERSION 3.1)
 project(vins)
 
+add_compile_options(-g  -ggdb)
 #set(CMAKE_BUILD_TYPE "Release")
 if (UNIX)
 set(CMAKE_CXX_FLAGS "-std=c++11 -fPIC")

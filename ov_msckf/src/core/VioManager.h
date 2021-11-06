@@ -319,6 +319,9 @@ protected:
   std::ofstream of_statistics;
   boost::posix_time::ptime rT1, rT2, rT3, rT4, rT5, rT6, rT7;
 
+  //state estimate file path
+  std::ofstream of_estimates;
+
   // Track how much distance we have traveled
   double timelastupdate = -1;
   double distance = 0;

@@ -489,11 +489,20 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
                     frame_it->second.T = Ps[i];
                     i++;
                 }
-                // solveGyroscopeBias(all_image_frame, Bgs);
-                // for (int i = 0; i <= WINDOW_SIZE; i++)
-                // {
-                //     pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
-                // }
+#define ESTIMATE_GRAVITY 0
+#if !ESTIMATE_GRAVITY
+                solveGyroscopeBias(all_image_frame, Bgs);
+                for (int i = 0; i <= WINDOW_SIZE; i++)
+                {
+                    pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
+                }
+                optimization();
+                updateLatestStates();
+                solver_flag = NON_LINEAR;
+                slideWindow();
+                std::cout << "Initialization finish!\n";
+                std::cout << "p:" << Ps[WINDOW_SIZE - 1].transpose() << std::endl;
+#else
                 if (visualInitialAlign()){
                     optimization();
                     updateLatestStates();
@@ -504,8 +513,10 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
                 }
                 else
                 {
+                    slideWindow();
                     std::cout << "misalign visual structure with IMU" << std::endl;
                 }
+#endif
             }
         }
 
@@ -735,7 +746,7 @@ bool Estimator::visualInitialAlign()
 
     bool result = false;
     if(!STEREO)
-        VisualIMUAlignment(all_image_frame, Bgs, g, x);
+        VisualIMUAlignment(all_image_frame, Bgs, g, x); // x(9,1)
     else{
         // VisualIMUAlignmentStereo(all_image_frame, Bgs, g, x);
         solveGyroscopeBias(all_image_frame, Bgs);
@@ -743,7 +754,7 @@ bool Estimator::visualInitialAlign()
         {
             pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
         }
-        if(LinearAlignmentStereo(all_image_frame, g, x))
+        if(LinearAlignmentStereo(all_image_frame, g, x)) // x(8,1)
             result = true;
         else 
             result = false;
@@ -768,9 +779,11 @@ bool Estimator::visualInitialAlign()
         s = (x.tail<1>())(0);
     else
         s = 1.0;
-    for (int i = 0; i <= WINDOW_SIZE; i++)
-    {
-        pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
+    if(!STEREO){ // TODOs, check it
+        for (int i = 0; i <= WINDOW_SIZE; i++)
+        {
+            pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
+        }
     }
     for (int i = frame_count; i >= 0; i--)
         Ps[i] = s * Ps[i] - Rs[i] * TIC[0] - (s * Ps[0] - Rs[0] * TIC[0]);
@@ -800,7 +813,7 @@ bool Estimator::visualInitialAlign()
     std::cout << "g0     " << g.transpose() << std::endl;
     std::cout << "my R0  " << Utility::R2ypr(Rs[0]).transpose() << std::endl;
 
-    if (!STEREO) {
+    if (!STEREO) { // TODOs, check it
         f_manager.clearDepth();
         f_manager.triangulate(frame_count, Ps, Rs, tic, ric);
     }
@@ -1102,7 +1115,7 @@ void Estimator::optimization()
         for (auto &it_per_frame : it_per_id.feature_per_frame)
         {
             imu_j++;
-            if (imu_i != imu_j)
+            if (imu_i != imu_j) //(0)//, this is mono
             {
                 Vector3d pts_j = it_per_frame.point;
                 ProjectionTwoFrameOneCamFactor *f_td = new ProjectionTwoFrameOneCamFactor(pts_i, pts_j, it_per_id.feature_per_frame[0].velocity, it_per_frame.velocity,

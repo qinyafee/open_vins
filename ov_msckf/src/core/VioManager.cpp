@@ -80,7 +80,7 @@ VioManager::VioManager(VioManagerOptions &params_) {
   //===================================================================================
 
   // If we are recording statistics, then open our file
-  if (params.record_timing_information) {
+  if (params.save_estimates) {
     //TODO, optimize here
     // // If the file exists, then delete it
     // if (boost::filesystem::exists(params.record_timing_filepath)) {
@@ -91,6 +91,15 @@ VioManager::VioManager(VioManagerOptions &params_) {
     // boost::filesystem::path p(params.record_timing_filepath);
     // boost::filesystem::create_directories(p.parent_path());
     // Open our statistics file!
+    of_estimates.open(params.save_estimates_filepath, std::ofstream::out | std::ofstream::trunc);
+    // Write the header information into it
+    of_estimates << "# timestamp (sec),qx,qy,qz,qw,px,py,pz,vx,vy,vz,bgx,bgy,bgz,bax,bay,baz,dist" << std::endl;
+    of_estimates.flush();
+  }
+
+  // If we are recording statistics, then open our file
+  if (params.record_timing_information) {
+
     of_statistics.open(params.record_timing_filepath, std::ofstream::out | std::ofstream::trunc);
     // Write the header information into it
     of_statistics << "# timestamp (sec),tracking,propagation,msckf update,";
@@ -813,6 +822,23 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
     }
   }
 #endif
+  // Finally if we are saving stats to file, lets save it to file
+  if (params.save_estimates && of_estimates.is_open()) {
+    // We want to publish in the IMU clock frame
+    // The timestamp in the state will be the last camera time
+    double t_ItoC = state->_calib_dt_CAMtoIMU->value()(0);
+    double timestamp_inI = state->_timestamp + t_ItoC;
+    // Append to the file
+    of_estimates << std::fixed << std::setprecision(15) << timestamp_inI << ","
+              << state->_imu->quat()(0) << "," << state->_imu->quat()(1) << "," << state->_imu->quat()(2) << ","
+              << state->_imu->quat()(3) << "," << state->_imu->pos()(0) << "," << state->_imu->pos()(1) << ","
+              << state->_imu->pos()(2) << ","
+              << state->_imu->vel()(0) << "," << state->_imu->vel()(1) << "," << state->_imu->vel()(2) << ","
+              << state->_imu->bias_g()(0) << "," << state->_imu->bias_g()(1) << "," << state->_imu->bias_g()(2) << ","
+              << state->_imu->bias_a()(0) << ", " << state->_imu->bias_a()(1) << "," << state->_imu->bias_a()(2) << ","
+              << distance << '\n';
+    of_estimates.flush();
+  }
 }
 
 bool VioManager::try_to_initialize() {

@@ -1,19 +1,26 @@
-
-# if using ros
-
-roslaunch ov_msckf 20210517.launch
-roslaunch ov_msckf 20210318.launch
-
-# if with out ros
+# if without ros
 
 <!-- config cuda here -->
 mkdir build && cd build
 cmake -DUSE_CUDA=ON ..
 make
 
-./ov_msckf/test_ov_main ~/2Others/open_vins_dyn/config/Pimax/20210318_ov.yaml ~/2Others/open_vins_dyn/config/Pimax/20210318_vf.yaml ~/0Data/20210318  > full.log 2>&1
 
-./ov_msckf/test_ov_main ~/1Code/open_vins_dyn/config/Pimax/20210318_ov.yaml ~/1Code/open_vins_dyn/config/Pimax/20210318_vf.yaml ~/0Data/pimax/20210318
+<!-- 0318 -->
+`./ov_msckf/test_ov_main ~/1Code/open_vins_dyn/config/Pimax/20210318_ov.yaml ~/1Code/open_vins_dyn/config/Pimax/20210318_vf.yaml ~/0Data/pimax/20210318 8000`
+
+the last parameter is optional, the skip frame number.
+
+`./ov_msckf/test_ov_main ~/2Others/open_vins_dyn/config/Pimax/20210318_ov.yaml ~/2Others/open_vins_dyn/config/Pimax/20210318_vf.yaml ~/0Data/20210318  > full.log 2>&1`
+
+
+<!-- 1027 -->
+`./ov_msckf/test_ov_main /home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_54/stereo_imu_ov.yaml /home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_54/stereo_imu.yaml /home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_54 8000`
+
+# if using ros
+
+roslaunch ov_msckf 20210517.launch
+roslaunch ov_msckf 20210318.launch
 
 Below is original
 -----------------------------

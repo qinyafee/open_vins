@@ -206,6 +206,9 @@ void ObtainLocalizationResult2(LocalizationOutputResult &result){
         result.valid = false;
         return;
     }
+    else {
+        result.valid = true;
+    }
     auto pstate = sys->get_state();
     
     result.t = pstate->_imu->pos();
@@ -236,6 +239,9 @@ void ObtainLocalizationResult3(double ts, LocalizationOutputResult& result)
 		result.valid = false;
 		return;
 	}
+    else {
+        result.valid = true;
+    }
     auto pstate = sys->get_state();
     Eigen::Matrix<double, 13, 1> state_plus;
     sys->get_propagator()->fast_state_propagate(pstate, ts, state_plus);

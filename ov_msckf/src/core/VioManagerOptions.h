@@ -84,6 +84,12 @@ struct VioManagerOptions {
   /// The path to the file we will record the timing information into
   std::string record_timing_filepath = "ov_msckf_timing.txt";
 
+  /// If we should record the state estimate to file
+  bool save_estimates = false;
+
+  /// The path to the file we will record the timing information into
+  std::string save_estimates_filepath = "estimates.csv";
+
   /**
    * @brief This function will print out all estimator settings loaded.
    * This allows for visual checking that everything was loaded properly from ROS/CMD parsers.

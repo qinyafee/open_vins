@@ -147,7 +147,7 @@ void viewResult(const std::string &config_file)
             glEnd();
         }
 
-        if (result_buffer.empty())
+        if (result_buffer.empty() || result_buffer_imu.empty())
             continue;
 
         if (menuShowHistoricalTrajectory)
@@ -397,15 +397,18 @@ void viewResult(const std::string &config_file)
 
 int main(int argc, char **argv)
 {
-    if (argc != 4)
+    if (argc < 4)
     {
         std::cout << "Usage: ./bin config_path basePath\n";
         //return 0;
     }
+    // skip some frames from the begin
+    std::string skip_str;
 #if 1
     std::string configPath = argv[1];
 	std::string vins_configPath = argv[2];
     std::string basePath = argv[3];
+    if(argc == 5) skip_str = argv[4];
 #else
     std::string configPath = "E:/yjd/gitwork/test/open_vins_dyn/config/Pimax/20210318_ov.yaml";
     std::string vins_configPath = "E:/yjd/gitwork/test/open_vins_dyn/config/Pimax/20210318_vf.yaml";
@@ -511,6 +514,10 @@ int main(int argc, char **argv)
     std::fstream f_seq;
     f_seq.open(seq_file, std::ios::in);
     std::string line_seq;
+
+    const int skip_num = (skip_str.empty()) ? 0 : std::stoi(skip_str);
+    int skip = 0;
+    std::cout << "skip_num: " << skip_num << '\n';
     while (getline(f_seq, line_seq))
     {
         int dataId;
@@ -521,6 +528,8 @@ int main(int argc, char **argv)
         if(fabs((timestamp - imgs_str_buffer.rbegin()->first) * 1e-6) < 0.2)
             resultEnd = true;
 
+        ++skip;
+        if(skip < skip_num) continue;
         if (dataType == 0)
         {
             
@@ -534,7 +543,7 @@ int main(int argc, char **argv)
             LocalizationOutputResult result;
             ObtainLocalizationResult3(timestamp, result);
             // ObtainLocalizationResult2(result);
-            //if(result.valid)
+            if(result.valid)
             {
                 std::unique_lock<std::mutex> lock(result_mtx);
                 {
@@ -561,7 +570,7 @@ int main(int argc, char **argv)
             FeedImagesData(data, params.state_options.num_cameras);
             LocalizationOutputResult result;
             ObtainLocalizationResult2(result);
-            //if(result.valid)
+            if(result.valid)
             {
                 std::unique_lock<std::mutex> lock(result_mtx);
                 {
@@ -572,6 +581,7 @@ int main(int argc, char **argv)
         }
     }
     std::cout << "association Runned Out\n";
+
     std::ofstream f_out;
     f_out.open("ts_file_map.txt", std::ios::out);
     for(auto it = ts_file_map.begin(); it != ts_file_map.end(); it++)
@@ -580,7 +590,7 @@ int main(int argc, char **argv)
     // if(MODE == MAPPING)
     //     ExportMap();
     //pause();
+    exit(0);
     getchar();
-
     return 0;
 }

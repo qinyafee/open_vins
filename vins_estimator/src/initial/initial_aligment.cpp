@@ -334,7 +334,7 @@ bool LinearAlignmentStereo(map<double, ImageFrame> &all_image_frame, Vector3d &g
     }
     A = A * 1000.0;
     b = b * 1000.0;
-    x = A.ldlt().solve(b);
+    x = A.ldlt().solve(b); //x(9,1)
     // double s = x(n_state - 1) / 100.0;
     // std::cout << "estimated scale: " <<  s << std::endl;
     g = x.segment<3>(n_state - 3);
