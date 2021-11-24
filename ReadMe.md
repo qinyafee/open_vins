@@ -7,15 +7,20 @@ make
 
 
 <!-- 0318 -->
-`./ov_msckf/test_ov_main ~/1Code/open_vins_dyn/config/Pimax/20210318_ov.yaml ~/1Code/open_vins_dyn/config/Pimax/20210318_vf.yaml ~/0Data/pimax/20210318 8000`
-
+`./ov_msckf/test_ov_main ~/2Others/open_vins_dyn/config/Pimax/20210318_ov.yaml ~/2Others/open_vins_dyn/config/Pimax/20210318_vf.yaml ~/0Data/20210318 8000 > full.log 2>&1`
 the last parameter is optional, the skip frame number.
 
-`./ov_msckf/test_ov_main ~/2Others/open_vins_dyn/config/Pimax/20210318_ov.yaml ~/2Others/open_vins_dyn/config/Pimax/20210318_vf.yaml ~/0Data/20210318  > full.log 2>&1`
+<!-- 0528, daylight, normal motion  -->
+`./ov_msckf/test_ov_main ~/2Others/open_vins_dyn/config/Pimax2/stereo_imu_ov.yaml ~/2Others/open_vins_dyn/config/Pimax2/stereo_imu.yaml /home/yafei/0Data/rfts_yjd_data_hmd_40`
 
-
-<!-- 1027 -->
+<!-- 1027 night, extreme motion-->
 `./ov_msckf/test_ov_main /home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_54/stereo_imu_ov.yaml /home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_54/stereo_imu.yaml /home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_54 8000`
+
+<!-- 1117, night, normal motion -->
+`./ov_msckf/test_ov_main ~/2Others/open_vins_dyn/config/Pimax2/stereo_imu_ov.yaml ~/2Others/open_vins_dyn/config/Pimax2/stereo_imu.yaml /home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_night_56`
+
+<!-- 1117, daylight, extreme motion  -->
+`./ov_msckf/test_ov_main ~/2Others/open_vins_dyn/config/Pimax2/stereo_imu_ov.yaml ~/2Others/open_vins_dyn/config/Pimax2/stereo_imu.yaml /home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_goodlight_55`
 
 # if using ros
 

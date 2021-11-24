@@ -821,6 +821,68 @@ bool Estimator::visualInitialAlign()
     return true;
 }
 
+// this is from original vins_fusion
+// bool Estimator::visualInitialAlign()
+// {
+//     TicToc t_g;
+//     VectorXd x;
+//     //solve scale
+//     bool result = VisualIMUAlignment(all_image_frame, Bgs, g, x);
+//     if(!result)
+//     {
+//         std::cout << "solve g failed!" << std::endl;
+//         return false;
+//     }
+
+//     // change state
+//     for (int i = 0; i <= frame_count; i++)
+//     {
+//         Matrix3d Ri = all_image_frame[Headers[i]].R;
+//         Vector3d Pi = all_image_frame[Headers[i]].T;
+//         Ps[i] = Pi;
+//         Rs[i] = Ri;
+//         all_image_frame[Headers[i]].is_key_frame = true;
+//     }
+
+//     double s = (x.tail<1>())(0);
+//     for (int i = 0; i <= WINDOW_SIZE; i++)
+//     {
+//         pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
+//     }
+//     for (int i = frame_count; i >= 0; i--)
+//         Ps[i] = s * Ps[i] - Rs[i] * TIC[0] - (s * Ps[0] - Rs[0] * TIC[0]);
+//     int kv = -1;
+//     map<double, ImageFrame>::iterator frame_i;
+//     for (frame_i = all_image_frame.begin(); frame_i != all_image_frame.end(); frame_i++)
+//     {
+//         if(frame_i->second.is_key_frame)
+//         {
+//             kv++;
+//             Vs[kv] = frame_i->second.R * x.segment<3>(kv * 3);
+//         }
+//     }
+
+//     Matrix3d R0 = Utility::g2R(g);
+//     double yaw = Utility::R2ypr(R0 * Rs[0]).x();
+//     R0 = Utility::ypr2R(Eigen::Vector3d{-yaw, 0, 0}) * R0;
+//     g = R0 * g;
+//     //Matrix3d rot_diff = R0 * Rs[0].transpose();
+//     Matrix3d rot_diff = R0;
+//     for (int i = 0; i <= frame_count; i++)
+//     {
+//         Ps[i] = rot_diff * Ps[i];
+//         Rs[i] = rot_diff * Rs[i];
+//         Vs[i] = rot_diff * Vs[i];
+//     }
+//     std::cout << "g0     " << g.transpose() << std::endl;
+//     std::cout << "my R0  " << Utility::R2ypr(Rs[0]).transpose() << std::endl;
+
+//     f_manager.clearDepth();
+//     f_manager.triangulate(frame_count, Ps, Rs, tic, ric);
+
+//     return true;
+// }
+
 bool Estimator::relativePose(Matrix3d &relative_R, Vector3d &relative_T, int &l)
 {
     // find previous frame which contians enough correspondance and parallex with newest frame

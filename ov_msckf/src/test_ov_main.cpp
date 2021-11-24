@@ -37,6 +37,7 @@ enum SensorType
 Eigen::Matrix3d Rbc0, Rbc1;
 Eigen::Vector3d tbc0, tbc1;
 
+cv::Mat img_left;
 std::map<long long, LocalizationOutputResult> result_buffer;
 std::map<long long, LocalizationOutputResult> result_buffer_imu;
 std::mutex result_mtx;
@@ -149,6 +150,9 @@ void viewResult(const std::string &config_file)
 
         if (result_buffer.empty() || result_buffer_imu.empty())
             continue;
+
+        // cv::imshow("Left Frame", img_left);
+        // cv::waitKey(1./33);
 
         if (menuShowHistoricalTrajectory)
         {
@@ -562,6 +566,7 @@ int main(int argc, char **argv)
             data.ts = timestamp;
             for(int i = 0; i < num; i++)
                 data.imgs.push_back(cv::imread(imgs_str_buffer[timestamp][i], 0));
+            // img_left = data.imgs[2];
             double timeScale = 1e-6;
             double dts = (double)(timestamp) * timeScale;
             long long ts_ = (long long)(1e6 * dts);

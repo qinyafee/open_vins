@@ -1,0 +1,257 @@
+%YAML:1.0
+
+# Main EKF parameters
+use_fej: 1
+# imu starting thresholds, use in static intialize
+imu_avg: 0
+init_window_time: 0.75
+init_imu_thresh: 1.5
+use_rk4_integration: 1
+do_calib_camera_pose: 0
+do_calib_camera_intrinsics: 0
+# whether or not to calibrate camera to IMU time offset
+do_calib_camera_timeoffset: 0
+# input Timeoffset from camera to IMU
+calib_camimu_dt: 0.0
+
+max_clones: 11
+# Max number of estimated SLAM features
+max_slam_features:  50
+# Max number of SLAM features we allow to be included in a single EKF update.
+max_slam_in_update: 50
+max_msckf_in_update: 999
+# max_aruco_features: 1024
+max_cameras: 5
+# Delay, in seconds, that we should wait from init before we start estimating SLAM features
+dt_slam_delay: 2.0
+
+#optimize stuff
+optimize: 0
+max_msckf_in_optimize: 20
+iter_num: 0
+
+
+# saving time cost
+record_timing_information: 1
+record_timing_filepath: "ov_msckf_timing.csv"
+
+# saving estimates
+save_estimates: 1
+save_estimates_filepath: "estimates.csv"
+
+stereo_pairs: [0,1]
+
+#path_vins_config: "/home/qyf/workspace/catkin_ws_ov/src/open_vins/config/Pimax/20210318_vf.yaml"
+# path_vins_config: "/home/qinyf1/1Code/open_vins/config/Pimax/20210318_vf.yaml"
+path_vins_config: "/home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_54/stereo_imu.yaml"
+
+# gravity: [0.0,0.0,9.81]
+gravity: 9.81
+
+# GLOBAL_3D, 
+feat_rep_msckf: "ANCHORED_FULL_INVERSE_DEPTH" 
+feat_rep_slam : "ANCHORED_FULL_INVERSE_DEPTH"
+# feat_rep_aruco: "ANCHORED_FULL_INVERSE_DEPTH"
+
+# Mapping flags
+use_map: 0
+draw_visible_mpts: 0
+draw_matched_mpts: 1
+
+# Tracking flags
+use_stereo: 1
+use_aruco : 0
+# tracker/extractor parameters 
+use_klt      : 1
+# if not use klt, then use descriptor, must set knn ratio
+knn_ratio    : 0.85
+# Minimum points matches for ransac
+min_matches : 20
+
+fast_threshold: 10
+grid_x       : 5
+grid_y       : 3
+min_px_dist  : 10 
+num_pts      : 100
+
+# downsize_aruco: 0
+downsample_cameras: 0
+## the follow flags, only one can set true
+# # multi-threading for stereo matching
+multi_threading : 0
+# using openCL
+use_ocl: 0
+# using cuda
+use_cuda: 1
+
+#imu parameters(continuous)      The more accurate parameters you provide, the better performance
+gyroscope_noise_density    : 1.8613649544737473e-03
+gyroscope_random_walk      : 1.8798047943711679e-05
+accelerometer_noise_density: 2.3024034938032064e-02
+accelerometer_random_walk  : 1.8127675506531912e-04
+
+# sensor noise values / update
+up_msckf_sigma_px : 1.0      
+up_msckf_chi2_multipler : 1
+up_slam_sigma_px : 1.0
+up_slam_chi2_multipler : 1
+# up_aruco_sigma_px : 1.0
+# up_aruco_chi2_multipler : 8
+
+
+# # zero velocity update, not used
+# modified by zzq for zupt. 
+try_zupt: 0
+zupt_chi2_multipler: 0
+zupt_max_velocity: 0.05
+zupt_noise_multiplier: 1.0
+zupt_max_disparity: 0.8
+zupt_only_at_beginning: 0
+# the following paramter can be opened indepently or opened togather
+# if both velocity and visual update are opened, then, it will do visual update first and then do velocity update
+zupt_velocity_update: 0  # 1 for velocity constrained update
+zupt_visual_update: 1   # 1 for visual constrained update
+
+# Feature initializer parameters
+# If we should perform 1d triangulation instead of 3d
+fi_triangulate_1d : 0
+# If we should perform Levenberg-Marquardt refinment
+fi_refine_features : 1
+# Max runs for Levenberg-Marquardt
+fi_max_runs : 5
+# Init lambda for Levenberg-Marquardt optimization
+fi_init_lamda : 1e-3
+# Max lambda for Levenberg-Marquardt optimization
+fi_max_lamda : 1e10
+# Cutoff for dx increment to consider as converged
+fi_min_dx : 1e-6
+# Cutoff for cost decrement to consider as converged
+fi_min_dcost : 1e-6
+# Multiplier to increase/decrease lambda
+fi_lam_mult : 10
+# Minimum distance to accept triangulated features
+fi_min_dist : 0.10
+# Minimum distance to accept triangulated features
+fi_max_dist : 60
+# Max baseline ratio to accept triangulated features
+fi_max_baseline : 40
+# Max condition number of linear triangulation matrix accept triangulated features
+fi_max_cond_number : 10000
+
+cam0_is_fisheye: 1
+cam1_is_fisheye: 1
+cam2_is_fisheye: 1
+cam3_is_fisheye: 1
+cam4_is_fisheye: 1
+
+image_width: 480
+image_height: 640
+
+
+cam0_k: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [1.9153581816989370e+02, 1.9137028979922442e+02, 2.3912509621188570e+02, 3.2442082587048480e+02]
+
+cam0_d: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [3.2508798722224697e-01, -7.0146051720021391e-02, -5.5319584125671582e-02, 2.5824032202680442e-02]
+
+cam1_k: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [1.9207063398531002e+02, 1.9169098836923530e+02, 2.3847196721365481e+02, 3.2429708288733008e+02]
+
+cam1_d: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [3.1907586411965971e-01, -9.4518774548668874e-02, 9.2444579629733271e-03, -1.2667239429112180e-02]
+   
+cam2_k: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [1.9098771307453674e+02,1.9082517504031497e+02,2.3637652571840516e+02,3.1916177898857592e+02]
+
+cam2_d: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [3.0322454975068147e-01,-2.3321286903228173e-02,-8.7410269690046186e-02,3.3382529119629224e-02]
+
+cam3_k: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [1.8979384904034765e+02,1.8963027335894952e+02,2.3682852334490173e+02,3.2351380706577146e+02]
+
+cam3_d: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [3.0428115633466907e-01,-1.8905653324522046e-02,-1.0572548156414106e-01,4.3772005233896162e-02]
+
+cam4_k: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [1.9156306548811708e+02,1.9149386790845071e+02,2.4565205529273459e+02,3.3001788327693401e+02]
+
+cam4_d: !!opencv-matrix
+   rows: 4
+   cols: 1
+   dt: d
+   data: [3.0857628313409652e-01,-5.1864858989406980e-02,-4.2687170978456583e-02,1.0526881260908342e-02]
+
+T_C0toI: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [0.9999694552499345, -0.0072152104539690, -0.0030048802395771, -0.0547172679127152,
+        -0.0078106700124735, -0.9365808003025486, -0.3503646642265644, -0.0093313631711660,
+        -0.0002863583515675, 0.3503774325534422, -0.9366085483040139, -0.0013837402167774,
+            0.0, 0.0, 0.0, 1.0]
+
+T_C1toI: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [0.9999736912567426, -0.0025745660226206, 0.0067814750725808, 0.0549386127463867,
+        0.0000182946038590, -0.9339950344261914, -0.3572859853570025, -0.0091778737934729,
+        0.0072537204021341, 0.3572767096761443, -0.9339704150899615, -0.0014666612065271,
+            0.0, 0.0, 0.0, 1.0]
+
+T_C2toI: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [0.0024597801714571, 0.9999953689637129, 0.0017920749516666, -0.0000392769810674,
+        -0.0001940431759022, -0.0017916030352081, 0.9999983762515851, 0.0649125104300105,
+        0.9999969559097420, -0.0024601239173062, 0.0001896353276618, 0.0028946028955173,
+          0.0, 0.0, 0.0, 1.0]
+
+T_C3toI: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [-0.0441783554735662, 0.3672389307917852, -0.9290768755159917, -0.0770915782074776,
+        -0.3580456075967276, -0.8740261113745205, -0.3284534967331355, -0.0092372832938521,
+        -0.9326583596303317, 0.3181413590629802, 0.1701013223499999, 0.0192636366169735,
+          0.0, 0.0, 0.0, 1.0]            
+
+T_C4toI: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [-0.0515045251759267, -0.3727329303111585, 0.9265082010150042, 0.0780691783799401,
+        0.3515735567161661, -0.8751172286998568, -0.3325144662276021, -0.0080790178049103,
+        0.9347423806078053, 0.3086097838603622, 0.1761155393521919, 0.0191405986407303,
+          0.0, 0.0, 0.0, 1.0]
+
+# vis
+show_pangolin: 1
