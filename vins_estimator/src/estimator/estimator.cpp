@@ -489,7 +489,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
                     frame_it->second.T = Ps[i];
                     i++;
                 }
-#define ESTIMATE_GRAVITY 0
+#define ESTIMATE_GRAVITY 1
 #if !ESTIMATE_GRAVITY
                 solveGyroscopeBias(all_image_frame, Bgs);
                 for (int i = 0; i <= WINDOW_SIZE; i++)
@@ -748,16 +748,22 @@ bool Estimator::visualInitialAlign()
     if(!STEREO)
         VisualIMUAlignment(all_image_frame, Bgs, g, x); // x(9,1)
     else{
-        // VisualIMUAlignmentStereo(all_image_frame, Bgs, g, x);
         solveGyroscopeBias(all_image_frame, Bgs);
         for (int i = 0; i <= WINDOW_SIZE; i++)
         {
             pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
         }
-        if(LinearAlignmentStereo(all_image_frame, g, x)) // x(8,1)
+        // VectorXd x_;
+        if(StereoAlignmentGravityNorm(all_image_frame, g, x)){
+            result = true;
+        } else {
+            result = false;
+        }
+        // depreciated stereo initial
+        /*if(LinearAlignmentStereo(all_image_frame, g, x))
             result = true;
         else 
-            result = false;
+            result = false;*/
     }
     if(!result)
     {
