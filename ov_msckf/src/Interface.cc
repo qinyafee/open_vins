@@ -267,6 +267,10 @@ void ObtainLocalizationResult3(double ts, LocalizationOutputResult& result)
     // result.feats_aruco = sys->get_features_ARUCO();
 }
 
+cv::Mat GetTrackImg(){
+    return sys->get_historical_viz_image();
+}
+
 /*
 void ObtainLocalizationResult(long long timestamp, LocalizationOutputResult &result)
 {

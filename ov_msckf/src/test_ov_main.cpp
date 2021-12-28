@@ -37,7 +37,7 @@ enum SensorType
 Eigen::Matrix3d Rbc0, Rbc1;
 Eigen::Vector3d tbc0, tbc1;
 
-cv::Mat img_left;
+cv::Mat imgShow;
 std::map<long long, LocalizationOutputResult> result_buffer;
 std::map<long long, LocalizationOutputResult> result_buffer_imu;
 std::mutex result_mtx;
@@ -93,7 +93,7 @@ void viewResult(const std::string &config_file)
     cv::cv2eigen(Tbc0, T_bc0);
     cv::cv2eigen(Tbc1, T_bc1);
 
-    pangolin::CreateWindowAndBind("vins_fusion: Viewer", 1280, 720);
+    pangolin::CreateWindowAndBind("open_vins: Viewer", 1280, 720);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -151,8 +151,12 @@ void viewResult(const std::string &config_file)
         if (result_buffer.empty() || result_buffer_imu.empty())
             continue;
 
-        // cv::imshow("Left Frame", img_left);
-        // cv::waitKey(1./33);
+        if(!imgShow.empty()){
+            cv::namedWindow("Tracking", CV_WINDOW_NORMAL);
+            cv::resizeWindow("Tracking", 1200, 320);
+            cv::imshow("Tracking", imgShow);
+            cv::waitKey(33);
+        }
 
         if (menuShowHistoricalTrajectory)
         {
@@ -566,7 +570,7 @@ int main(int argc, char **argv)
             data.ts = timestamp;
             for(int i = 0; i < num; i++)
                 data.imgs.push_back(cv::imread(imgs_str_buffer[timestamp][i], 0));
-            // img_left = data.imgs[2];
+            // imgShow = data.imgs[3]; //left
             double timeScale = 1e-6;
             double dts = (double)(timestamp) * timeScale;
             long long ts_ = (long long)(1e6 * dts);
@@ -583,6 +587,7 @@ int main(int argc, char **argv)
                         result_buffer[timestamp] = result;
                 }
             }
+            imgShow = GetTrackImg();
         }
     }
     std::cout << "association Runned Out\n";

@@ -51,6 +51,7 @@ void FeedImuData(const ImuInputData &data);
 void ObtainLocalizationResult(long long timestamp, LocalizationOutputResult &result);
 void ObtainLocalizationResult2(LocalizationOutputResult &result);
 void ObtainLocalizationResult3(double ts, LocalizationOutputResult& result);
+cv::Mat GetTrackImg();
 
 std::vector<std::pair<int, int>> ObtainMatchingWithMap(long long timestamp);
 
