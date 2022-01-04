@@ -14,7 +14,7 @@ the last parameter is optional, the skip frame number.
 `./ov_msckf/test_ov_main ~/2Others/open_vins_dyn/config/Pimax2/stereo_imu_ov.yaml ~/2Others/open_vins_dyn/config/Pimax2/stereo_imu.yaml /home/yafei/0Data/rfts_yjd_data_hmd_40`
 
 <!-- 1027 night, extreme motion-->
-`./ov_msckf/test_ov_main /home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_54/stereo_imu_ov.yaml /home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_54/stereo_imu.yaml /home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_54 8000`
+`./ov_msckf/test_ov_main ~/2Others/open_vins_dyn/config/Pimax2/stereo_imu_ov.yaml ~/2Others/open_vins_dyn/config/Pimax2/stereo_imu.yaml /home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_54 8000`
 
 <!-- 1117, night, normal motion -->
 `./ov_msckf/test_ov_main ~/2Others/open_vins_dyn/config/Pimax2/stereo_imu_ov.yaml ~/2Others/open_vins_dyn/config/Pimax2/stereo_imu.yaml /home/yafei/0Data/rfts_yjd_data_hmd_dyn_init_night_56`

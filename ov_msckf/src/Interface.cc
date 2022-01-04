@@ -268,7 +268,11 @@ void ObtainLocalizationResult3(double ts, LocalizationOutputResult& result)
 }
 
 cv::Mat GetTrackImg(){
-    return sys->get_historical_viz_image();
+    if(sys->vins_estimator.solver_flag == Estimator::INITIAL){
+        return {};
+    } else {
+        return sys->get_historical_viz_image();
+    }
 }
 
 /*
