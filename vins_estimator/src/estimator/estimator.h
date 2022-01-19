@@ -78,6 +78,7 @@ class Estimator
     void fastPredictIMU(double t, Eigen::Vector3d linear_acceleration, Eigen::Vector3d angular_velocity);
     bool IMUAvailable(double t);
     void initFirstIMUPose(vector<pair<double, Eigen::Vector3d>> &accVector);
+    bool FeatureInertialInit(Vector3d &g, VectorXd &x_);
 
     enum SolverFlag
     {
@@ -112,11 +113,13 @@ class Estimator
     Matrix3d ric[2];
     Vector3d tic[2];
 
-    Vector3d        Ps[(WINDOW_SIZE + 1)];
+    Vector3d        Ps[(WINDOW_SIZE + 1)];// kth imu w.r.t world
     Vector3d        Vs[(WINDOW_SIZE + 1)];
     Matrix3d        Rs[(WINDOW_SIZE + 1)];
     Vector3d        Bas[(WINDOW_SIZE + 1)];
     Vector3d        Bgs[(WINDOW_SIZE + 1)];
+    Vector3d        Paccs[(WINDOW_SIZE + 1)];//acc part of P w.r.t B0
+
     double td;
 
     Matrix3d back_R0, last_R, last_R0;

@@ -63,6 +63,13 @@ extern double F_THRESHOLD;
 extern int SHOW_TRACK;
 extern int FLOW_BACK;
 
+enum class VioInitMethod{ //for stereo
+    kVinsFusionOriginal = 0,
+    kVioInitTightly,
+    kVinsFusionWithGravityNorm,
+    // kVinsFusionWithGravity //depreciated
+};
+extern VioInitMethod INIT_METHOD;
 void readParameters(std::string config_file);
 
 enum SIZE_PARAMETERIZATION

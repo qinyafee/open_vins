@@ -320,8 +320,9 @@ void Estimator::processMeasurements()
                 for(size_t i = 0; i < accVector.size(); i++)
                 {
                     double dt;
-                    if(i == 0)
-                        dt = accVector[i].first - prevTime;
+                    if(i == 0){
+                        dt = std::fabs(prevTime -(-1))<1e-4 ? 0.001 : (accVector[i].first - prevTime);//0.001 is imu freq
+                    }
                     else if (i == accVector.size() - 1)
                         dt = curTime - accVector[i - 1].first;
                     else
@@ -405,6 +406,8 @@ void Estimator::processIMU(double t, double dt, const Vector3d &linear_accelerat
         Vector3d un_acc_1 = Rs[j] * (linear_acceleration - Bas[j]) - g;
         Vector3d un_acc = 0.5 * (un_acc_0 + un_acc_1);
         Ps[j] += dt * Vs[j] + 0.5 * dt * dt * un_acc;
+        Vector3d acc_with_g = un_acc + g;
+        Paccs[j] += dt * Vs[j] + 0.5 * dt * dt * acc_with_g;
         Vs[j] += dt * un_acc;
     }
     acc_0 = linear_acceleration;
@@ -482,35 +485,8 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
             }
         }
 
-        // stereo + IMU initilization
-        if(STEREO && USE_IMU)
-        {
-            f_manager.initFramePoseByPnP(frame_count, Ps, Rs, tic, ric);
-            f_manager.triangulate(frame_count, Ps, Rs, tic, ric);
-            if (frame_count == WINDOW_SIZE)
-            {
-                map<double, ImageFrame>::iterator frame_it;
-                int i = 0;
-                for (frame_it = all_image_frame.begin(); frame_it != all_image_frame.end(); frame_it++)
-                {
-                    frame_it->second.R = Rs[i];
-                    frame_it->second.T = Ps[i];
-                    i++;
-                }
-#define ESTIMATE_GRAVITY 1
-#if !ESTIMATE_GRAVITY
-                solveGyroscopeBias(all_image_frame, Bgs);
-                for (int i = 0; i <= WINDOW_SIZE; i++)
-                {
-                    pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
-                }
-                optimization();
-                updateLatestStates();
-                solver_flag = NON_LINEAR;
-                slideWindow();
-                std::cout << "Initialization finish!\n";
-                std::cout << "p:" << Ps[WINDOW_SIZE - 1].transpose() << std::endl;
-#else
+        if(STEREO && USE_IMU && INIT_METHOD == VioInitMethod::kVioInitTightly){
+            if(frame_count == WINDOW_SIZE){
                 if (visualInitialAlign()){
                     optimization();
                     updateLatestStates();
@@ -524,7 +500,51 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
                     slideWindow();
                     std::cout << "misalign visual structure with IMU" << std::endl;
                 }
-#endif
+            }
+        }
+        // stereo + IMU initilization
+        if(STEREO && USE_IMU && (INIT_METHOD != VioInitMethod::kVioInitTightly))
+        {
+            f_manager.initFramePoseByPnP(frame_count, Ps, Rs, tic, ric);
+            f_manager.triangulate(frame_count, Ps, Rs, tic, ric);
+            if (frame_count == WINDOW_SIZE)
+            {
+                map<double, ImageFrame>::iterator frame_it;
+                int i = 0;
+                for (frame_it = all_image_frame.begin(); frame_it != all_image_frame.end(); frame_it++)
+                {
+                    frame_it->second.R = Rs[i];
+                    frame_it->second.T = Ps[i];
+                    i++;
+                }
+
+                if (INIT_METHOD == VioInitMethod::kVinsFusionOriginal){
+                    solveGyroscopeBias(all_image_frame, Bgs);
+                    for (int i = 0; i <= WINDOW_SIZE; i++)
+                    {
+                        pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
+                    }
+                    optimization();
+                    updateLatestStates();
+                    solver_flag = NON_LINEAR;
+                    slideWindow();
+                    std::cout << "Initialization finish!\n";
+                    std::cout << "p:" << Ps[WINDOW_SIZE - 1].transpose() << std::endl;
+                }else{
+                    if (visualInitialAlign()){
+                        optimization();
+                        updateLatestStates();
+                        solver_flag = NON_LINEAR;
+                        slideWindow();
+                        std::cout << "Initialization finish!\n";
+                        std::cout << "p:" << Ps[WINDOW_SIZE - 1].transpose() << std::endl;
+                    }
+                    else
+                    {
+                        slideWindow();
+                        std::cout << "misalign visual structure with IMU" << std::endl;
+                    }
+                }
             }
         }
 
@@ -755,7 +775,13 @@ bool Estimator::visualInitialAlign()
     bool result = false;
     if(!STEREO)
         VisualIMUAlignment(all_image_frame, Bgs, g, x); // x(9,1)
-    else{
+    else if(INIT_METHOD == VioInitMethod::kVioInitTightly){
+        if(FeatureInertialInit(g, x)){
+            result = true;
+        } else {
+            result = false;
+        }
+    }else if(INIT_METHOD == VioInitMethod::kVinsFusionWithGravityNorm){
         solveGyroscopeBias(all_image_frame, Bgs);
         for (int i = 0; i <= WINDOW_SIZE; i++)
         {
@@ -767,7 +793,7 @@ bool Estimator::visualInitialAlign()
         } else {
             result = false;
         }
-        // depreciated stereo initial
+        // depreciated stereo initial, kVinsFusionWithGravity
         /*if(LinearAlignmentStereo(all_image_frame, g, x))
             result = true;
         else 
@@ -803,12 +829,14 @@ bool Estimator::visualInitialAlign()
         Ps[i] = s * Ps[i] - Rs[i] * TIC[0] - (s * Ps[0] - Rs[0] * TIC[0]);
     int kv = -1;
     map<double, ImageFrame>::iterator frame_i;
-    for (frame_i = all_image_frame.begin(); frame_i != all_image_frame.end(); frame_i++)
-    {
-        if(frame_i->second.is_key_frame)
+    if(INIT_METHOD == VioInitMethod::kVinsFusionWithGravityNorm){
+        for (frame_i = all_image_frame.begin(); frame_i != all_image_frame.end(); frame_i++)
         {
-            kv++;
-            Vs[kv] = frame_i->second.R * x.segment<3>(kv * 3);
+            if(frame_i->second.is_key_frame)
+            {
+                kv++;
+                Vs[kv] = frame_i->second.R * x.segment<3>(kv * 3);
+            }
         }
     }
 
@@ -1721,4 +1749,100 @@ void Estimator::updateLatestStates()
         tmp_gyrBuf.pop();
     }
     mPropagate.unlock();
+}
+
+bool Estimator::FeatureInertialInit(Vector3d &g, VectorXd &x_){
+    vector<SFMFeature> sfm_f;
+    for (auto &it_per_id : f_manager.feature)
+    {
+        int imu_j = it_per_id.start_frame - 1;
+        SFMFeature tmp_feature;
+        tmp_feature.state = false;
+        tmp_feature.id = it_per_id.feature_id;
+        for (auto &it_per_frame : it_per_id.feature_per_frame)
+        {
+            imu_j++;
+            Vector3d pts_j = it_per_frame.point;
+            tmp_feature.observation.push_back(make_pair(imu_j, Eigen::Vector2d{pts_j.x(), pts_j.y()}));
+        }
+        sfm_f.push_back(tmp_feature);
+    } 
+
+    const int N = WINDOW_SIZE + 1;
+    const int M = sfm_f.size();
+    const int n_r = 2*N;
+    const int n_state = 3*M+6;
+    MatrixXd A1{n_r, 3*M+3};
+    A1.setZero();
+    MatrixXd A2{n_r, 3};
+    A2.setZero();
+    VectorXd b{n_r};
+    b.setZero();
+    x_.resize(n_state);
+
+    MatrixXd obs{2, 3};
+    obs.setZero();
+    MatrixXd tmp{2, 3};
+    tmp.setZero();
+    Matrix3d Rcb = ric[0].transpose();
+    Vector3d tcb = -Rcb * tic[0];
+    MatrixXd T{3, 3*M+3};
+
+    vector<double>  elapsed; // time elapsed
+    elapsed.resize(WINDOW_SIZE + 1);
+    double total = 0.0;
+    for(int t = 0; t < (WINDOW_SIZE + 1); ++t){
+        for(const auto& delta : dt_buf[t]){
+            total += delta;
+        }
+        elapsed[t] = total;
+    }
+    for(int j = 0; j < sfm_f.size(); ++j){
+        auto uvs = sfm_f[j].observation;
+        for(const auto& uv : uvs){
+            obs << 1.0, 0.0, -uv.second(0),
+                   0.0, 1.0, -uv.second(1);
+            int i = uv.first; // frame idx
+            double dt = elapsed[i];
+            T.setZero();
+            T.block<3,3>(0, j*3) = Matrix3d::Identity();
+            T.rightCols<3>() = Matrix3d::Identity() * (-dt);
+            tmp.setZero();
+            tmp = obs * Rcb * Rs[i].transpose();
+            A1.middleRows<2>(i*2) += tmp * T;
+            A2.middleRows<2>(i*2) += tmp * Matrix3d::Identity() *dt*dt/2;
+            b.middleRows<2>(i*2) += tmp * Paccs[i] - obs * tcb;
+        }
+    }
+    // std::cout << "A1: \n" << A1 << '\n';
+
+    A1 = A1 * 100.0;
+    A2 = A2 * 100.0;
+    b = b * 100.0;
+    MatrixXd A1tA1 = A1.transpose() * A1;
+    // std::cout << "A1tA1: \n" << A1tA1 << '\n';
+    MatrixXd A1tA1_inv = A1tA1.inverse();
+    // std::cout << "A1tA1_inv: \n" << A1tA1_inv << '\n';
+    MatrixXd I = MatrixXd::Identity(n_r,n_r);
+    Matrix3d D = A2.transpose()*(I -A1*A1tA1_inv*A1.transpose())*A2;
+    std::cout << "matD: \n" << D << '\n';
+    Vector3d d = A2.transpose()*(I -A1*A1tA1_inv*A1.transpose())*b;
+    std::cout << "vecd: \n" << d.transpose() << '\n';
+    double lambda = 0.0;
+    if(FindLagrange(D, d, lambda)){
+        g = (D - MatrixXd::Identity(3,3)*lambda).inverse()*d;
+        VectorXd x1 = -A1tA1_inv * A1.transpose() * A2 * g + A1tA1_inv * A1.transpose() * b;
+        std::cout << "first gravity solved, norm: " << g.norm() << ", vector: " << g.transpose() << std::endl;
+        if(fabs(g.norm() - G.norm()) > 0.5 || std::isnan(g.norm()))// || s < 0
+        {
+            return false;
+        }
+        // RefineGravityStereo(all_image_frame, g, x_);
+        // std::cout << "refind gravity, norm: " << g.norm() << ", vector: " << g.transpose() << std::endl;
+        x_.head(3*M+3) = x1;
+        x_.tail(3) = g;
+        return true;
+    } else {
+        return false;
+    }
 }

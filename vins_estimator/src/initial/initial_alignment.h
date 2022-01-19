@@ -40,3 +40,4 @@ bool VisualIMUAlignment(map<double, ImageFrame> &all_image_frame, Vector3d* Bgs,
 bool LinearAlignmentStereo(map<double, ImageFrame> &all_image_frame, Vector3d &g, VectorXd &x);
 
 bool StereoAlignmentGravityNorm(map<double, ImageFrame> &all_image_frame, Vector3d &g, VectorXd &x);
+bool FindLagrange(const Matrix3d& D, const Vector3d& d, double& lambda);
