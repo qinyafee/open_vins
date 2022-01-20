@@ -48,6 +48,22 @@ int FeatureManager::getFeatureCount()
     return cnt;
 }
 
+int FeatureManager::getMeasurementCount()
+{
+    int cnt = 0;
+    for (auto &it_per_id : feature)
+    {
+        it_per_id.used_num = it_per_id.feature_per_frame.size();
+        if (it_per_id.used_num >= 4)
+        {
+            for(auto &it_per_frame : it_per_id.feature_per_frame)
+            {
+                cnt += (it_per_frame.is_stereo ? 2 : 1);
+            }
+        }
+    }
+    return cnt;
+}
 
 bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> &image, double td)
 {
