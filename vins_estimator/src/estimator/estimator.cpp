@@ -183,9 +183,9 @@ void Estimator::inputImage(double t, const cv::Mat &_img, const cv::Mat &_img1)
         cv::Mat imgTrack = featureTracker.getTrackImage();
         if(!imgTrack.empty()){
             cv::namedWindow("vins-fusion", CV_WINDOW_NORMAL);
-            cv::resizeWindow("vins-fusion", 960, 640);
+            cv::resizeWindow("vins-fusion", 2*COL, ROW); // (960, 640)
             cv::imshow("vins-fusion", imgTrack);
-            cv::waitKey(33);
+            cv::waitKey(1);
             // cv::destroyWindow("vins-fusion");
             cv::imwrite(std::to_string(frame_count) + ".png", imgTrack);
         }
