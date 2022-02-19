@@ -118,7 +118,8 @@ class Estimator
     Matrix3d        Rs[(WINDOW_SIZE + 1)];
     Vector3d        Bas[(WINDOW_SIZE + 1)];
     Vector3d        Bgs[(WINDOW_SIZE + 1)];
-    Vector3d        Paccs[(WINDOW_SIZE + 1)];//acc part of P w.r.t B0
+    Vector3d        Paccs[(WINDOW_SIZE + 1)];//acc part of P w.r.t world
+    Vector3d        Vaccs[(WINDOW_SIZE + 1)]; // with g
 
     double td;
 

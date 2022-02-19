@@ -60,6 +60,8 @@ void Estimator::clearState()
         Vs[i].setZero();
         Bas[i].setZero();
         Bgs[i].setZero();
+        Paccs[i].setZero();
+        Vaccs[i].setZero();
         dt_buf[i].clear();
         linear_acceleration_buf[i].clear();
         angular_velocity_buf[i].clear();
@@ -406,10 +408,12 @@ void Estimator::processIMU(double t, double dt, const Vector3d &linear_accelerat
         Vector3d un_acc_1 = Rs[j] * (linear_acceleration - Bas[j]) - g;
         Vector3d un_acc = 0.5 * (un_acc_0 + un_acc_1);
         Ps[j] += dt * Vs[j] + 0.5 * dt * dt * un_acc;
-        Vector3d acc_with_g = un_acc + g;
-        Matrix3d Rwb0 = Rs[0].transpose();
-        Paccs[j] += Rwb0 * (dt * Vs[j] + 0.5 * dt * dt * acc_with_g);
         Vs[j] += dt * un_acc;
+        Vector3d acc_with_g = un_acc + g; //acc measuremt without bias
+        // Matrix3d Rwb0 = Rs[0].transpose();
+        // Paccs[j] += Rwb0 * (dt * Vs[j] + 0.5 * dt * dt * acc_with_g);
+        Paccs[j] += (dt * Vaccs[j] + 0.5 * dt * dt * acc_with_g);
+        Vaccs[j] += dt * acc_with_g;
     }
     acc_0 = linear_acceleration;
     gyr_0 = angular_velocity; 
@@ -490,6 +494,14 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
             f_manager.initFramePoseByPnP(frame_count, Ps, Rs, tic, ric);
             f_manager.triangulate(frame_count, Ps, Rs, tic, ric);
             if(frame_count == WINDOW_SIZE){
+                // map<double, ImageFrame>::iterator frame_it;
+                // int i = 0;
+                // for (frame_it = all_image_frame.begin(); frame_it != all_image_frame.end(); frame_it++)
+                // {
+                //     frame_it->second.R = Rs[i];
+                //     frame_it->second.T = Ps[i];
+                //     i++;
+                // }
                 if (visualInitialAlign()){
                     optimization();
                     updateLatestStates();
@@ -1811,8 +1823,8 @@ bool Estimator::FeatureInertialInit(Vector3d &g, VectorXd &x_){
             tmp = obs * Rcb[0] * Rs[imu_i].transpose() * Rs[0];
             ++i;
             A1.middleRows<2>(i*2) += tmp * T;
-            A2.middleRows<2>(i*2) += tmp * Matrix3d::Identity() *dt*dt/2;
-            b.middleRows<2>(i*2) += tmp * Paccs[imu_i] - obs * tcb[0];
+            A2.middleRows<2>(i*2) -= tmp * Matrix3d::Identity() *dt*dt/2;
+            b.middleRows<2>(i*2) += tmp * (Paccs[imu_i]-Paccs[0]) - obs * tcb[0];
             if(it_per_frame.is_stereo){
                 obs.setZero();
                 obs << 1.0, 0.0, -it_per_frame.pointRight(0),
@@ -1824,8 +1836,8 @@ bool Estimator::FeatureInertialInit(Vector3d &g, VectorXd &x_){
                 tmp = obs * Rcb[1] * Rs[imu_i].transpose() * Rs[0];
                 ++i;
                 A1.middleRows<2>(i*2) += tmp * T;
-                A2.middleRows<2>(i*2) += tmp * Matrix3d::Identity() *dt*dt/2;
-                b.middleRows<2>(i*2) += tmp * Paccs[imu_i] - obs * tcb[1];
+                A2.middleRows<2>(i*2) -= tmp * Matrix3d::Identity() *dt*dt/2;
+                b.middleRows<2>(i*2) += tmp * (Paccs[imu_i]-Paccs[0]) - obs * tcb[1];
             }
         }
     }
