@@ -45,7 +45,7 @@ int MIN_DIST;
 double F_THRESHOLD;
 int SHOW_TRACK;
 int FLOW_BACK;
-VioInitMethod INIT_METHOD = VioInitMethod::kVioInitTightly;//kVinsFusionWithGravityNorm
+VioInitMethod INIT_METHOD = VioInitMethod::kVinsFusionWithGravityNorm;//kVioInitTightly;//
 
 template <typename T>
 T readParam()
