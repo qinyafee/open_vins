@@ -568,7 +568,7 @@ int main(int argc, char **argv)
                 continue;
             ImagesInputData data;
             data.ts = timestamp;
-            for(int i = 0; i < num; i++)
+            for(size_t i = 0; i < num; i++)
                 data.imgs.push_back(cv::imread(imgs_str_buffer[timestamp][i], 0));
             // imgShow = data.imgs[3]; //left
             double timeScale = 1e-6;

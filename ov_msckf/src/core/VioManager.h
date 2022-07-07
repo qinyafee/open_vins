@@ -96,6 +96,31 @@ public:
   void feed_measurement_simulation(double timestamp, const std::vector<int> &camids,
                                    const std::vector<std::vector<std::pair<size_t, Eigen::VectorXf>>> &feats);
 
+  bool reset_flag = false;
+  /**
+   * @brief Check if estimate state is valid
+   */
+  void CheckEstimateState(){
+    // TODOs, make it configable
+    if(state->_imu->bias_g().norm() > 0.8 || state->_imu->vel().norm() > 3.5){
+      vins_estimator.clearState();
+      vins_estimator.solver_flag = Estimator::SolverFlag::INITIAL;
+      // propagator->Clear();
+      // camera_queue.clear();
+      reset_flag = true;
+
+      printf(RED "[INIT]: EstimateState FAILED!\n" RESET);
+      printf(RED "[INIT]: orientation = %.4f, %.4f, %.4f, %.4f\n" RESET, state->_imu->quat()(0), state->_imu->quat()(1),
+            state->_imu->quat()(2), state->_imu->quat()(3));
+      printf(RED "[INIT]: bias gyro = %.4f, %.4f, %.4f\n" RESET, state->_imu->bias_g()(0), state->_imu->bias_g()(1),
+            state->_imu->bias_g()(2));
+      printf(RED "[INIT]: velocity = %.4f, %.4f, %.4f\n" RESET, state->_imu->vel()(0), state->_imu->vel()(1), state->_imu->vel()(2));
+      printf(RED "[INIT]: bias accel = %.4f, %.4f, %.4f\n" RESET, state->_imu->bias_a()(0), state->_imu->bias_a()(1),
+            state->_imu->bias_a()(2));
+      printf(RED "[INIT]: position = %.4f, %.4f, %.4f\n" RESET, state->_imu->pos()(0), state->_imu->pos()(1), state->_imu->pos()(2));
+    }
+  }
+
   /**
    * @brief Given a state, this will initialize our IMU state.
    * @param imustate State in the MSCKF ordering: [time(sec),q_GtoI,p_IinG,v_IinG,b_gyro,b_accel]
@@ -107,6 +132,10 @@ public:
     state->_imu->set_fej(imustate.block(1, 0, 16, 1));
     state->_timestamp = imustate(0, 0);
     startup_time = imustate(0, 0);
+    CheckEstimateState();
+    if(reset_flag){
+      return;
+    }
     is_initialized_vio = true;
 
     // Fix the global yaw and position gauge freedoms

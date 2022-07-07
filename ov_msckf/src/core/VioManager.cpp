@@ -193,6 +193,9 @@ void VioManager::feed_measurement_imu(const ov_core::ImuData &message) {
   double timestamp_inC = message.timestamp - state->_calib_dt_CAMtoIMU->value()(0);
   while (!camera_queue.empty() && camera_queue.at(0).timestamp < timestamp_inC) {
     track_image_and_update(camera_queue.at(0));
+    if(reset_flag){
+      break;
+    }
     camera_queue.pop_front();
   }
 }
@@ -324,17 +327,19 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
     if (params.use_stereo) {
 #if USE_VINS_INIT
       if (vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL) {
+        boost::posix_time::ptime t1 = boost::posix_time::microsec_clock::local_time();
         vins_estimator.inputImage(message.timestamp,
           message.images.at(0),
           message.images.at(1));
+        boost::posix_time::ptime t2 = boost::posix_time::microsec_clock::local_time();
+        double init_time = (t2 - t1).total_microseconds() * 1e-6;
+        std::cout << "vins estimator init time is " << init_time << " s.";
         if (vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL)
           return;
         else// initialize success
         {
-          Eigen::Matrix<double, 3, 3> Ro;
-          Ro = vins_estimator.latest_Q.toRotationMatrix(); //R_I0toG;
-          Eigen::Matrix<double, 3, 3> R;
-          R = Ro.transpose();
+          Eigen::Matrix<double, 3, 3> Ro = vins_estimator.latest_Q.toRotationMatrix(); //R_I0toG;
+          Eigen::Matrix<double, 3, 3> R = Ro.transpose();
           Eigen::Matrix<double, 4, 1> q_GtoI = rot_2_quat(R);
 
           //set IMU state [time(sec),q_GtoI,p_IinG,v_IinG,b_gyro,b_accel] 17 dof
@@ -449,6 +454,7 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
 #endif
   // Call on our propagate and update function
   do_feature_propagate_update(message);
+  CheckEstimateState();
 }
 
 void VioManager::do_feature_propagate_update(const ov_core::CameraData &message) {
@@ -824,6 +830,36 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
 #endif
   // Finally if we are saving stats to file, lets save it to file
   if (params.save_estimates && of_estimates.is_open()) {
+    static bool init_output = false;
+    if(!init_output){
+      double dist = 0.0;
+      for(size_t i = 0; i <= WINDOW_SIZE; ++i){
+        double ts = 100.0;
+        Eigen::Vector3d P = vins_estimator.Ps[i];
+        Eigen::Vector3d V = vins_estimator.Vs[i];
+
+        // convert to JPL
+        Eigen::Matrix<double, 3, 3> Ro = vins_estimator.Rs[i]; //R_I0toG;
+        Eigen::Matrix<double, 3, 3> R = Ro.transpose();
+        Eigen::Matrix<double, 4, 1> q_GtoI = rot_2_quat(R);
+
+        Eigen::Vector3d Bg = vins_estimator.Bgs[i];
+        Eigen::Vector3d Ba = vins_estimator.Bas[i];
+        if(i!=0){
+          dist += (P - vins_estimator.Ps[i-1]).norm();
+        }
+        of_estimates << std::fixed << std::setprecision(15) << ts << ","
+          << q_GtoI(0) << "," << q_GtoI(1) << "," << q_GtoI(2) << "," << q_GtoI(3) << ","
+          << P(0) << "," << P(1) << "," << P(2) << ","
+          << V(0) << "," << V(1) << "," << V(2) << ","
+          << Bg(0) << "," << Bg(1) << "," << Bg(2) << ","
+          << Ba(0) << "," << Ba(1) << "," << Ba(2) << ","
+          << dist <<  '\n';
+        of_estimates.flush();
+      }
+      init_output = true;
+    }
+
     // We want to publish in the IMU clock frame
     // The timestamp in the state will be the last camera time
     double t_ItoC = state->_calib_dt_CAMtoIMU->value()(0);

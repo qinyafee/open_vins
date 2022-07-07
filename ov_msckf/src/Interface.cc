@@ -72,6 +72,13 @@ void InitSystem(const std::string &vins_config_file)
 
 void FeedImagesData(const ImagesInputData &data, const size_t num_cam)
 {
+    if(sys->reset_flag) {
+        TicToc processTime;
+        sys = std::make_shared<VioManager>(params);
+        sys->vins_estimator.setParameter();
+        sys->reset_flag = false;
+        printf("Reset system time: %f\n", processTime.toc());
+    }
     double ts = (double)(data.ts) * mTimescale;
     cv::Mat left = data.imgs[3];
     cv::Mat right = data.imgs[2];
@@ -163,6 +170,13 @@ void FeedImagesData(const ImagesInputData &data, const size_t num_cam)
 
 void FeedImuData(const ImuInputData &data)
 {
+    if(sys->reset_flag) {
+        TicToc processTime;
+        sys = std::make_shared<VioManager>(params);
+        sys->vins_estimator.setParameter();
+        sys->reset_flag = false;
+        printf("Reset system time: %f\n", processTime.toc());
+    }
     double ts = (double)(data.ts) * mTimescale;
     // convert into correct format
     ov_core::ImuData message;
