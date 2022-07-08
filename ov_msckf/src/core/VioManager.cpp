@@ -333,7 +333,7 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
           message.images.at(1));
         boost::posix_time::ptime t2 = boost::posix_time::microsec_clock::local_time();
         double init_time = (t2 - t1).total_microseconds() * 1e-6;
-        std::cout << "vins estimator init time is " << init_time << " s.";
+        std::cout << "vins estimator init time is " << init_time << " s. ";
         if (vins_estimator.solver_flag == Estimator::SolverFlag::INITIAL)
           return;
         else// initialize success
