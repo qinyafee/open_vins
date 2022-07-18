@@ -716,7 +716,8 @@ void
 EquidistantCamera::backprojectSymmetric(const Eigen::Vector2d& p_u,
                                         double& theta, double& phi) const
 {
-    double tol = 1e-10;
+    constexpr double tol = 1e-10;
+    constexpr int max_time = 3e4;
     double p_u_norm = p_u.norm();
 
     if (p_u_norm < 1e-10)
@@ -772,49 +773,65 @@ EquidistantCamera::backprojectSymmetric(const Eigen::Vector2d& p_u,
     {
         theta = p_u_norm;
     }
-    else
-    {
-        // Get eigenvalues of companion matrix corresponding to polynomial.
-        // Eigenvalues correspond to roots of polynomial.
-        Eigen::MatrixXd A(npow, npow);
-        A.setZero();
-        A.block(1, 0, npow - 1, npow - 1).setIdentity();
-        A.col(npow - 1) = - coeffs.block(0, 0, npow, 1) / coeffs(npow);
+    else{
+        // Newton iteration
+        theta = p_u_norm;
+        for(size_t i = 0; i < max_time; ++i){
+            double theta2 = theta * theta;
+            double theta4 = theta2 * theta2;
+            double theta6 = theta2 * theta4;
+            double theta8 = theta4 * theta4;
 
-        Eigen::EigenSolver<Eigen::MatrixXd> es(A);
-        Eigen::MatrixXcd eigval = es.eigenvalues();
-
-        std::vector<double> thetas;
-        for (int i = 0; i < eigval.rows(); ++i)
-        {
-            if (fabs(eigval(i).imag()) > tol)
-            {
-                continue;
+            double f_theta = (1 + coeffs(3)*theta2 + coeffs(5)*theta4 + coeffs(7)*theta6 + coeffs(9)*theta8)*theta - p_u_norm;
+            if(std::fabs(f_theta) < tol){
+                return;
             }
-
-            double t = eigval(i).real();
-
-            if (t < -tol)
-            {
-                continue;
-            }
-            else if (t < 0.0)
-            {
-                t = 0.0;
-            }
-
-            thetas.push_back(t);
-        }
-
-        if (thetas.empty())
-        {
-            theta = p_u_norm;
-        }
-        else
-        {
-            theta = *std::min_element(thetas.begin(), thetas.end());
+            double f_theta_jac = 1 + 3*coeffs(3)*theta2 + 5*coeffs(5)*theta4 + 7*coeffs(7)*theta6 + 9*coeffs(9)*theta8;
+            theta = theta - f_theta / f_theta_jac;
         }
     }
+    // {
+    //     // Get eigenvalues of companion matrix corresponding to polynomial.
+    //     // Eigenvalues correspond to roots of polynomial.
+    //     Eigen::MatrixXd A(npow, npow);
+    //     A.setZero();
+    //     A.block(1, 0, npow - 1, npow - 1).setIdentity();
+    //     A.col(npow - 1) = - coeffs.block(0, 0, npow, 1) / coeffs(npow);
+
+    //     Eigen::EigenSolver<Eigen::MatrixXd> es(A);
+    //     Eigen::MatrixXcd eigval = es.eigenvalues();
+
+    //     std::vector<double> thetas;
+    //     for (int i = 0; i < eigval.rows(); ++i)
+    //     {
+    //         if (fabs(eigval(i).imag()) > tol)
+    //         {
+    //             continue;
+    //         }
+
+    //         double t = eigval(i).real();
+
+    //         if (t < -tol)
+    //         {
+    //             continue;
+    //         }
+    //         else if (t < 0.0)
+    //         {
+    //             t = 0.0;
+    //         }
+
+    //         thetas.push_back(t);
+    //     }
+
+    //     if (thetas.empty())
+    //     {
+    //         theta = p_u_norm;
+    //     }
+    //     else
+    //     {
+    //         theta = *std::min_element(thetas.begin(), thetas.end());
+    //     }
+    // }
 }
 
 }
