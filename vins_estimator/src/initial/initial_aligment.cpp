@@ -461,9 +461,9 @@ bool StereoAlignmentGravityNorm(map<double, ImageFrame> &all_image_frame, Vector
     MatrixXd A1tA1_inv = A1tA1.inverse();
     MatrixXd I = MatrixXd::Identity(n_r,n_r);
     Matrix3d D = A2.transpose()*(I -A1*A1tA1_inv*A1.transpose())*A2;
-    std::cout << "matD: \n" << D << '\n';
+    // std::cout << "matD: \n" << D << '\n';
     Vector3d d = A2.transpose()*(I -A1*A1tA1_inv*A1.transpose())*b;
-    std::cout << "vecd: \n" << d.transpose() << '\n';
+    // std::cout << "vecd: \n" << d.transpose() << '\n';
     double lambda = 0.0;
     if(FindLagrange(D, d, lambda)){
         g = (D - MatrixXd::Identity(3,3)*lambda).inverse()*d;
@@ -473,8 +473,6 @@ bool StereoAlignmentGravityNorm(map<double, ImageFrame> &all_image_frame, Vector
         {
             return false;
         }
-        RefineGravityStereo(all_image_frame, g, x_);
-        std::cout << "refind gravity, norm: " << g.norm() << ", vector: " << g.transpose() << std::endl;
         x_.head(3*N) = x1;
         x_.tail(3) = g;
         return true;

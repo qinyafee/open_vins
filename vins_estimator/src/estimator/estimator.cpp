@@ -547,7 +547,9 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
                     std::cout << "p:" << Ps[WINDOW_SIZE - 1].transpose() << std::endl;
                 }else{
                     if (visualInitialAlign()){
+                        TicToc opt_t;
                         optimization();
+                        printf("optimization cost: %fms\n", opt_t.toc());
                         updateLatestStates();
                         solver_flag = NON_LINEAR;
                         slideWindow();
@@ -797,17 +799,26 @@ bool Estimator::visualInitialAlign()
             result = false;
         }
     }else if(INIT_METHOD == VioInitMethod::kVinsFusionWithGravityNorm){
-        solveGyroscopeBias(all_image_frame, Bgs);
-        for (int i = 0; i <= WINDOW_SIZE; i++)
-        {
-            pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
+        if(0){ // Do not solve bg to save time
+            TicToc bg_t;
+            solveGyroscopeBias(all_image_frame, Bgs);
+            std::cout << "solve bg time: " << bg_t.toc() << "ms\n";
+            TicToc repg_t;
+            for (int i = 0; i <= WINDOW_SIZE; i++)
+            {
+                pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
+            }
+            std::cout << "repropagate time: " << repg_t.toc() << "ms\n";
         }
+
+        // TicToc lgr_t;
         // VectorXd x_;
         if(StereoAlignmentGravityNorm(all_image_frame, g, x)){
             result = true;
         } else {
             result = false;
         }
+        // std::cout << "find Lagrange time: " << lgr_t.toc() << "ms\n";
         // depreciated stereo initial, kVinsFusionWithGravity
         /*if(LinearAlignmentStereo(all_image_frame, g, x))
             result = true;
@@ -874,7 +885,7 @@ bool Estimator::visualInitialAlign()
         f_manager.clearDepth();
         f_manager.triangulate(frame_count, Ps, Rs, tic, ric);
     }
-
+    std::cout << "visualInitialAlign time: " << t_g.toc() << " ms\n";
     return true;
 }
 
