@@ -102,7 +102,7 @@ public:
    */
   void CheckEstimateState(){
     // TODOs, make it configable
-    if(state->_imu->bias_g().norm() > 0.8 || state->_imu->vel().norm() > 3.5){
+    if(state->_imu->bias_g().norm() > 0.8 || state->_imu->vel().norm() > 2.5){
       vins_estimator.clearState();
       vins_estimator.solver_flag = Estimator::SolverFlag::INITIAL;
       // propagator->Clear();
